@@ -1,6 +1,6 @@
 use std::{time::{Duration, Instant}, fs};
 use sdl2::{render::{Canvas, TextureCreator}, video::{Window, WindowContext}, pixels::Color, ttf::Font, event::Event, keyboard::Keycode, image::LoadTexture, mixer::{self, Music}, mouse::MouseWheelDirection};
-use crate::{key::GameKey, app::{App, AppState, GameState, self}, game_object::GameObject, input::keybutton::{KeyButton}, input::button_module::Button, load_song::Song};
+use crate::{key::GameKey, app::{App, AppState, GameState, self, Testing}, game_object::GameObject, input::keybutton::{KeyButton}, input::button_module::Button, load_song::Song};
 
 pub struct KeyState {
     pub left: bool,
@@ -27,16 +27,15 @@ pub struct GameLogic { // here we define the data we use on our script
     index_range: u64,
     selected_object: Option<selected>,
     buttons: Vec<Button>,
+    changing_start: bool,
+    add_key: bool,
+    start_point:  f64
 } 
 
 impl GameLogic {
     // this is called once
     pub fn new(app: &mut App,  app_state: &mut AppState,  _font: &Font,) -> Self {
         let mut song_game = None;
-
-        println!("editing");
-
-        // app_state.song_folder = Some("madness".to_owned());
         match &app_state.song_folder {
             Some(folder) => {
                 song_game = Some(Song::new(folder));
@@ -48,7 +47,6 @@ impl GameLogic {
         let mut up_keys = vec![];
         let mut bottom_keys = vec![];
         let mut right_keys = vec![];
-
         let start_index = 0;
 
         match &song_game {
@@ -58,26 +56,22 @@ impl GameLogic {
                         left_keys.push(GameKey::new(GameObject {active: true, x: ((app.width/2) - 175) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Left".to_owned())));
                     } else {
                         left_keys.push(GameKey::new(GameObject {active: true, x: ((app.width/2) - 160) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None));
-                    }                     
+                    } 
                     if song_data.up_keys.contains(&(spaces as u64)) {
                         up_keys.push(GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Up".to_owned())));
                     } else {
                         up_keys.push(GameKey::new(GameObject {active: true, x: ((app.width/2) - 60) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None));
                     }
-                    
                     if song_data.bottom_keys.contains(&(spaces as u64)) {
                         bottom_keys.push(GameKey::new(GameObject {active: true, x: ((app.width/2) + 25) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Bottom".to_owned())));
                     } else {
                         bottom_keys.push(GameKey::new(GameObject {active: true, x: ((app.width/2) + 40) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None));
                     }
-
-                    
                     if song_data.right_keys.contains(&(spaces as u64)) {
                         right_keys.push(GameKey::new(GameObject {active: true, x: ((app.width/2) + 125) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Right".to_owned())));
                     } else {
                         right_keys.push(GameKey::new(GameObject {active: true, x: ((app.width/2) + 140) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None));
                     }
-                    
                 }
             },
             None => {},
@@ -85,10 +79,13 @@ impl GameLogic {
 
         let mut keys = vec![left_keys, up_keys, bottom_keys, right_keys];
 
-        let save = Button::new(GameObject { active: true, x:(app.width - 80) as f32, y: 10.0, width: 70.0, height: 40.0}, String::from("save"), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),);
-        let play = Button::new(GameObject { active: true, x:(app.width - 80) as f32, y: 60.0, width: 70.0, height: 40.0}, String::from("play"), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),);
+        let save = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 10.0, width: 100.0, height: 40.0}, String::from("save"), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),);
+        let play = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 60.0, width: 100.0, height: 40.0}, String::from("play"), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),);
+        
+        let add_single_key = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 130.0, width: 100.0, height: 40.0}, String::from("Add key"), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),);
+        let add_testing_start = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 180.0, width: 100.0, height: 40.0}, String::from("Add start"), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),);
 
-         // controlers 
+        // controlers 
         let key_left = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) - 195) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0},Color::RGB(200, 50, 100));
         let key_up = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) - 95) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
         let key_bottom = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) + 5) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
@@ -106,7 +103,10 @@ impl GameLogic {
             note_spaces_mod: 5.0,
             index_range: 1200,
             selected_object: None,
-            buttons: vec![save, play]
+            buttons: vec![save, play, add_single_key, add_testing_start],
+            changing_start: false,
+            add_key: false,
+            start_point: 300.0
         }
     }
 
@@ -126,7 +126,7 @@ impl GameLogic {
                         let mut scroller_space = 0.0;
 
                         for element in 0..song.end {
-                            let mut space = GameKey::new(GameObject {active: true, x: ((app.width/2) + 250) as f32, y: app.height as f32 - scroller_space, width: 2.0, height: 0.2}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Right".to_owned()));
+                            let mut space = GameKey::new(GameObject {active: true, x: ((app.width/2) + 250) as f32, y: app.height as f32 - scroller_space, width: 5.0, height: 0.2}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Right".to_owned()));
                             if element > self.start_index && element < self.start_index + self.index_range as u128 {
                                 space.color = Color::RGB(90, 90, 90);
                             }
@@ -159,11 +159,11 @@ impl GameLogic {
                     }
                 }
     
-    
                 let mut key_buttons = [&self.key_left, &self.key_up, &self.key_right, &self.key_bottom];
                 for button_key in key_buttons.iter_mut() {
                     button_key.render(Some("assets/sprites/WhiteKey-Sheet.png"), app);
                 }
+
                 Self::event_handler(self, app_state, event_pump, app);
                 app.canvas.present();
             },
@@ -177,27 +177,14 @@ impl GameLogic {
         for event in event_pump.poll_iter() {
             match event {
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    app_state.is_running = false;
+                    app.testing_song = None;
+                    app_state.state = GameState::SelectingSong;
                 }
                 Event::KeyDown { keycode: Some(Keycode::LCtrl), .. } => {
                     self.ctrl = true;
                 }
                 Event::KeyUp { keycode: Some(Keycode::LCtrl), .. } => {
                     self.ctrl = false;
-                }
-                Event::KeyDown { keycode: Some(Keycode::S), .. } => {
-                    
-                }
-                Event::KeyDown { keycode: Some(Keycode::R), .. } => {
-                    match &self.song_game {
-                        Some(song) => {
-                            app.testing_song = Some(self.generate_array());
-                        },
-                        None => {},
-                    }
-                    app.reseted = false;
-                    app_state.state = GameState::Playing;
-
                 }
                 Event::KeyDown { keycode: Some(Keycode::Delete), .. } => {                    
                     match &self.selected_object {
@@ -249,7 +236,7 @@ impl GameLogic {
             if self.buttons[1].on_click(&event) { // play
                 match &self.song_game {
                     Some(song) => {
-                        app.testing_song = Some(self.generate_array());
+                        app.testing_song = Some(Testing{song: self.generate_array(), start_point: self.start_point});
                     },
                     None => {},
                 }
@@ -257,7 +244,25 @@ impl GameLogic {
                 app_state.state = GameState::Playing;
             }
 
-            for mut list in self.keys.iter_mut() {
+            if self.buttons[2].on_click(&event) { // play
+                if self.add_key == false {
+                    self.add_key = true;
+                } else {
+                    self.add_key = false;
+                }
+            }
+
+            if self.buttons[3].on_click(&event) { // play
+                if self.changing_start == false {
+                    self.buttons[3].text = "Del start".to_owned();
+                    self.changing_start = true;
+                } else {
+                    self.buttons[3].text = "Add start".to_owned();
+                    self.changing_start = false;
+                }
+            }
+
+            for (i, list) in self.keys.iter_mut().enumerate() {
                 for key in self.start_index as usize..self.start_index as usize + self.index_range as usize {
                     list[key].is_hover(&event);
                     if list[key].hover {
@@ -266,12 +271,16 @@ impl GameLogic {
                                 list[key].color = Color::RGB(0, 50, 50);
                             },
                             None => {
-                                match &self.selected_object {
-                                    Some(_) => {
-                                        list[key].color = Color::RGB(100, 0, 0);
-                                    }
-                                    None => {
-                                        list[key].color = Color::RGB(0, 0, 0);
+                                if self.changing_start == true {
+                                    list[key].color = Color::RGB(200, 0, 100);
+                                } else {
+                                    match &self.selected_object {
+                                        Some(_) => {
+                                            list[key].color = Color::RGB(100, 0, 0);
+                                        }
+                                        None => {
+                                            list[key].color = Color::RGB(0, 0, 0);
+                                        }
                                     }
                                 }
                             },
@@ -285,23 +294,40 @@ impl GameLogic {
                                 list[key].color = Color::RGB(0, 0, 0);
                             },
                         }
-                        
                     }
 
                     if list[key].is_clicked(&event) {
-                        match &self.selected_object {
-                            Some(selected) => {
-                                list.swap(selected.key, key);
-                                self.selected_object = None;
+                        if self.add_key {
+                            if i == 0 {
+                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 175) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Left".to_owned()));
+                            } else if i == 1 {
+                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Up".to_owned()));
+                            } else if i == 2 {
+                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 25) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Bottom".to_owned()));
+                            } else if i == 3 {
+                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 125) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Right".to_owned()));
                             }
-                            None => {
-                                match &list[key].flag {
-                                    Some(flag) => {
-                                        self.selected_object = Some(selected{ key, flag: flag.clone()});
-                                    },
-                                    None => {},
+                        }
+
+                        if self.changing_start == true {
+                            self.start_point = key as f64 / 100.0;
+                        } else {
+                            match &self.selected_object {
+                                Some(selected) => {
+                                    list.swap(selected.key, key);
+                                    self.selected_object = None;
                                 }
-                                
+                                None => {
+                                    match &list[key].flag {
+                                        Some(flag) => {
+                                            if !self.add_key {
+                                                self.selected_object = Some(selected{ key, flag: flag.clone()});
+                                            }
+                                        },
+                                        None => {},
+                                    }
+
+                                }
                             }
                         }
                     }

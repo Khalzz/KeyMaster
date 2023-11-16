@@ -4,7 +4,6 @@ use std::time::Instant;
 use sdl2::mixer::{DEFAULT_CHANNELS, AUDIO_S16LSB, DEFAULT_FORMAT, InitFlag, self, DEFAULT_FREQUENCY, Sdl2MixerContext};
 use sdl2::render::TextureCreator;
 use sdl2::video::WindowContext;
-use sdl2::video::GLProfile;
 use sdl2::{video::Window, Sdl, render::Canvas, sys::KeyCode, keyboard::Keycode};
 
 use crate::gameplay::play;
@@ -41,6 +40,11 @@ pub struct AppState {
     pub song_folder: Option<String>
 }
 
+pub struct Testing {
+    pub song: Song,
+    pub start_point: f64
+}
+
 pub struct App {
     pub context: Sdl,
     pub mixer_context: (),  
@@ -55,7 +59,7 @@ pub struct App {
     pub start_pause: Instant,
     pub paused_time: u128,
     pub reseted: bool,
-    pub testing_song: Option<Song>
+    pub testing_song: Option<Testing>
 }
 
 impl App {

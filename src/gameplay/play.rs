@@ -44,7 +44,7 @@ impl GameLogic<'_> {
                 match &app.testing_song {
                     Some(testing) => {
                         let song_game = Song::new(folder);
-                        song_keys = Some(testing.clone().get_keys(&mut app.width, &app.coordination_data.base_time, app.coordination_data.key_speed));
+                        song_keys = Some(testing.song.clone().get_keys(&mut app.width, &app.coordination_data.base_time, app.coordination_data.key_speed));
                     },
                     None => {
                         let song_game = Song::new(folder);
@@ -104,6 +104,14 @@ impl GameLogic<'_> {
     pub fn update(&mut self, _font: &Font, mut app_state: &mut AppState, mut event_pump: &mut sdl2::EventPump, app: &mut App) {
         match app_state.song_folder {
             Some(_) => {
+                match &app.testing_song {
+                    Some(_song) => {
+                        println!("{}", _song.start_point);
+                    },
+                    None => {},
+                }
+
+
                 app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
                 app.canvas.clear();
                 
@@ -111,7 +119,15 @@ impl GameLogic<'_> {
 
                 // timer
                 let elapsed_time = self.start_time.elapsed() - self.paused_time;
-                let mut milliseconds = (elapsed_time.as_millis() / 10) - app.paused_time / 10;
+                let mut milliseconds = 0;
+                match &app.testing_song {
+                    Some(_song) => {
+                        milliseconds = ((elapsed_time.as_millis() / 10) - app.paused_time / 10) + ((_song.start_point * 100.0) + 300.0) as u128
+                    },
+                    None => {
+                        milliseconds = (elapsed_time.as_millis() / 10) - app.paused_time / 10
+                    },
+                }
 
                 // buttons 
                 let mut key_buttons = [&self.key_left, &self.key_up, &self.key_right, &self.key_bottom];
@@ -146,6 +162,13 @@ impl GameLogic<'_> {
                             match &self.song {
                                 Some(song) => {
                                     song.play(1);
+                                    match &app.testing_song {
+                                        Some(testing) => {
+                                            mixer::Music::set_pos(testing.start_point);
+                                        },
+                                        None => {},
+                                    }
+
                                 },
                                 None => {},
                             }
@@ -168,7 +191,7 @@ impl GameLogic<'_> {
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. }  => {
                     match app.testing_song {
                         Some(_) => {
-                            // reset
+                            Self::reset(self, app, app_state);
                             app_state.state = GameState::Editing
                         },
                         None => {    
@@ -179,6 +202,8 @@ impl GameLogic<'_> {
                             }
                         },
                     }
+                },Event::KeyDown { keycode: Some(Keycode::R), .. }  => {
+                    mixer::Music::set_pos(10.0);
                 }, Event::Quit { .. } => {
                     app_state.is_running = false;
                 } 
