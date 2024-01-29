@@ -56,14 +56,15 @@ impl GameLogic<'_> {
             None => {},
         }
 
+
         // UI ELEMENT
-        let ui_points = Button::new(GameObject { active: true, x:(app.width - 40) as f32, y: 10.0, width: 0.0, height: 0.0}, String::from("Points"), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0),);
-        let timer = Button::new(GameObject {active: true, x:(app.width - 40) as f32, y: 30.0, width: 0.0, height: 0.0},String::from("Timer"),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),);
+        let ui_points = Button::new(GameObject { active: true, x:(app.width - 40) as f32, y: 10.0, width: 0.0, height: 0.0}, Some(String::from("Points")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0),None);
+        let timer = Button::new(GameObject {active: true, x:(app.width - 40) as f32, y: 30.0, width: 0.0, height: 0.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
 
         // PAUSE UI
-        let pause_text = Button::new(GameObject {active: true, x: 0.0, y: 0.0, width: app.width as f32, height: app.height as f32},String::from("Pause"),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),);
-        let resume = Button::new(GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height - (app.height / 2) + 50) as f32, width: 100.0, height: 50.0},String::from("resume"),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),);
-        let exit = Button::new(GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height - (app.height / 2) + 110) as f32, width: 100.0, height: 50.0},String::from("exit"),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),);
+        let pause_text = Button::new(GameObject {active: true, x: 0.0, y: 0.0, width: app.width as f32, height: app.height as f32},Some(String::from("Pause")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
+        let resume = Button::new(GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height - (app.height / 2) + 50) as f32, width: 100.0, height: 50.0},Some(String::from("resume")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
+        let exit = Button::new(GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height - (app.height / 2) + 110) as f32, width: 100.0, height: 50.0},Some(String::from("exit")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
 
         // UI LISTS
         let ui_elements = vec![ui_points, timer];
@@ -106,12 +107,11 @@ impl GameLogic<'_> {
             Some(_) => {
                 match &app.testing_song {
                     Some(_song) => {
-                        println!("{}", _song.start_point);
+                        // println!("{}", _song.start_point);
                     },
                     None => {},
                 }
-
-
+                
                 app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
                 app.canvas.clear();
                 
@@ -122,7 +122,7 @@ impl GameLogic<'_> {
                 let mut milliseconds = 0;
                 match &app.testing_song {
                     Some(_song) => {
-                        milliseconds = ((elapsed_time.as_millis() / 10) - app.paused_time / 10) + ((_song.start_point * 100.0) + 300.0) as u128
+                        milliseconds = ((elapsed_time.as_millis() / 10) - app.paused_time / 10) + ((_song.start_point) + 300.0) as u128
                     },
                     None => {
                         milliseconds = (elapsed_time.as_millis() / 10) - app.paused_time / 10
@@ -140,8 +140,8 @@ impl GameLogic<'_> {
                     None => {},
                 } 
 
-                self.ui_elements[0].text = self.points.to_string(); // point text
-                self.ui_elements[1].text = format!("{}", milliseconds); // timer
+                self.ui_elements[0].text = Some(self.points.to_string()); // point text
+                self.ui_elements[1].text = Some(format!("{}", milliseconds)); // timer
 
                 if app.paused {
                     milliseconds = 0;
@@ -164,7 +164,7 @@ impl GameLogic<'_> {
                                     song.play(1);
                                     match &app.testing_song {
                                         Some(testing) => {
-                                            mixer::Music::set_pos(testing.start_point);
+                                            mixer::Music::set_pos(((elapsed_time.as_millis() / 10) - app.paused_time / 10) as f64 + (testing.start_point) as f64 / 100.0);
                                         },
                                         None => {},
                                     }
@@ -203,7 +203,7 @@ impl GameLogic<'_> {
                         },
                     }
                 },Event::KeyDown { keycode: Some(Keycode::R), .. }  => {
-                    mixer::Music::set_pos(10.0);
+                    // mixer::Music::set_pos(10.0);
                 }, Event::Quit { .. } => {
                     app_state.is_running = false;
                 } 

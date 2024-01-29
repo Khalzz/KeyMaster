@@ -11,11 +11,11 @@ pub struct GameLogic { // here we define the data we use on our script
 
 impl GameLogic {
     pub fn new(app: &mut App) -> Self {
-        let key_left = Button::new(GameObject {active: true, x: ((app.width/2) - 185) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},String::from("Left"),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),);
-        let key_right = Button::new(GameObject {active: true, x: ((app.width/2) + 115) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},String::from("Right"),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),);
-        let key_up = Button::new(GameObject {active: true,x: ((app.width/2) - 85) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},String::from("Up"),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),);
-        let key_bottom = Button::new(GameObject {active: true, x: ((app.width/2) + 15) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},String::from("Down"),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),);
-        let back_button = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},String::from("Back"),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),);
+        let key_left = Button::new(GameObject {active: true, x: ((app.width/2) - 185) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Left")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
+        let key_right = Button::new(GameObject {active: true, x: ((app.width/2) + 115) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Right")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
+        let key_up = Button::new(GameObject {active: true,x: ((app.width/2) - 85) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Up")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
+        let key_bottom = Button::new(GameObject {active: true, x: ((app.width/2) + 15) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Down")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
+        let back_button = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},Some(String::from("Back")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
 
         let key_state = [false, false, false, false];
         let btn_list = vec![key_left, key_up, key_bottom, key_right];
@@ -37,9 +37,9 @@ impl GameLogic {
             self.btn_list[btn].render(&mut app.canvas, &app.texture_creator, _font);
             self.back_button.render(&mut app.canvas, &mut app.texture_creator, _font);
                 if self.key_state[btn] {
-                    self.btn_list[btn].text = String::from("...");
+                    self.btn_list[btn].text = Some(String::from("..."));
                 } else {
-                    self.btn_list[btn].text = app.play_keys[btn].to_string();
+                    self.btn_list[btn].text = Some(app.play_keys[btn].to_string());
                 }
         }
         Self::event_handler(&mut app_state,&mut event_pump, &mut self.key_state, &mut self.btn_list, &mut app.play_keys, &mut self.back_button);
@@ -55,7 +55,7 @@ impl GameLogic {
                 Event::KeyDown { keycode: Some(keycode), .. } => {
                     for btn in 0..btn_list.len() {
                         if key_state[btn] {
-                            btn_list[btn].text = String::from("...");
+                            btn_list[btn].text = Some(String::from("..."));
                             play_keys[btn] = keycode;
                         }
                     }

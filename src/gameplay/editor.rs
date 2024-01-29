@@ -79,18 +79,20 @@ impl GameLogic {
 
         let mut keys = vec![left_keys, up_keys, bottom_keys, right_keys];
 
-        let save = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 10.0, width: 100.0, height: 40.0}, String::from("save"), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),);
-        let play = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 60.0, width: 100.0, height: 40.0}, String::from("play"), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),);
+        let save = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 10.0, width: 100.0, height: 40.0}, Some(String::from("save")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None);
+        let play = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 60.0, width: 100.0, height: 40.0}, Some(String::from("play")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None);
         
-        let add_single_key = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 130.0, width: 100.0, height: 40.0}, String::from("Add key"), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),);
-        let add_testing_start = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 180.0, width: 100.0, height: 40.0}, String::from("Add start"), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),);
+        let add_single_key = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 130.0, width: 100.0, height: 40.0}, Some(String::from("Add key")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None);
+        let add_testing_start = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 180.0, width: 100.0, height: 40.0}, Some(String::from("Add start")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None);
+        let time_position = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 230.0, width: 100.0, height: 40.0}, Some(String::from("000")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None);
 
         // controlers 
         let key_left = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) - 195) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0},Color::RGB(200, 50, 100));
         let key_up = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) - 95) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
         let key_bottom = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) + 5) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
         let key_right = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) + 105) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
-        
+
+
         Self {
             key_left,
             key_up,
@@ -103,7 +105,7 @@ impl GameLogic {
             note_spaces_mod: 5.0,
             index_range: 1200,
             selected_object: None,
-            buttons: vec![save, play, add_single_key, add_testing_start],
+            buttons: vec![save, play, add_single_key, add_testing_start, time_position],
             changing_start: false,
             add_key: false,
             start_point: 300.0
@@ -112,6 +114,8 @@ impl GameLogic {
 
     // this is called every frame
     pub fn update(&mut self, _font: &Font, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
+        self.buttons[4].text = Some(self.start_index.to_string());
+
         match app_state.song_folder {
             Some(_) => {
                 app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
@@ -126,11 +130,12 @@ impl GameLogic {
                         let mut scroller_space = 0.0;
 
                         for element in 0..song.end {
-                            let mut space = GameKey::new(GameObject {active: true, x: ((app.width/2) + 250) as f32, y: app.height as f32 - scroller_space, width: 5.0, height: 0.2}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Right".to_owned()));
+                            let mut space = Button::new(GameObject {active: true, x: ((app.width/2) + 250) as f32, y: app.height as f32 - scroller_space, width: 5.0, height: 0.2}, None ,Color::RGB(0, 200, 0), Color::RGB(0, 200, 0), Color::RGB(0,0,0), Color::RGB(0,0,0), None);
                             if element > self.start_index && element < self.start_index + self.index_range as u128 {
                                 space.color = Color::RGB(90, 90, 90);
                             }
-                            space.render(&mut app.canvas);
+                            
+                            space.render(&mut app.canvas, &app.texture_creator, _font);
                             scroller_space += 0.2;
                         }
                     },
@@ -158,6 +163,7 @@ impl GameLogic {
                         note_spaces += 0.70 * self.note_spaces_mod;
                     }
                 }
+
     
                 let mut key_buttons = [&self.key_left, &self.key_up, &self.key_right, &self.key_bottom];
                 for button_key in key_buttons.iter_mut() {
@@ -203,6 +209,22 @@ impl GameLogic {
                         None => {},
                     }
                 }
+                Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
+                    match &self.song_game {
+                        Some(song_game) => {
+                            if self.start_index < song_game.end - 150 {
+                                self.start_index += 100;
+                            }
+                        }
+                        None => {}
+                    }
+                    
+                }
+                Event::KeyDown { keycode: Some(Keycode::Down), .. } => {
+                    if self.start_index > 100 {
+                        self.start_index -= 100;
+                    }
+                }
                 Event::Quit { .. } => {
                     app_state.is_running = false;
                 }
@@ -244,20 +266,22 @@ impl GameLogic {
                 app_state.state = GameState::Playing;
             }
 
-            if self.buttons[2].on_click(&event) { // play
+            if self.buttons[2].on_click(&event) { // add key
                 if self.add_key == false {
                     self.add_key = true;
                 } else {
                     self.add_key = false;
                 }
+                self.buttons[2].toggle = Some(self.add_key);
+
             }
 
             if self.buttons[3].on_click(&event) { // play
                 if self.changing_start == false {
-                    self.buttons[3].text = "Del start".to_owned();
+                    self.buttons[3].text = Some("Del start".to_owned());
                     self.changing_start = true;
                 } else {
-                    self.buttons[3].text = "Add start".to_owned();
+                    self.buttons[3].text = Some("Add start".to_owned());
                     self.changing_start = false;
                 }
             }
@@ -265,6 +289,7 @@ impl GameLogic {
             for (i, list) in self.keys.iter_mut().enumerate() {
                 for key in self.start_index as usize..self.start_index as usize + self.index_range as usize {
                     list[key].is_hover(&event);
+
                     if list[key].hover {
                         match list[key].flag {
                             Some(_) => {
@@ -279,7 +304,7 @@ impl GameLogic {
                                             list[key].color = Color::RGB(100, 0, 0);
                                         }
                                         None => {
-                                            list[key].color = Color::RGB(0, 0, 0);
+                                                list[key].color = Color::RGB(0, 0, 0);
                                         }
                                     }
                                 }
@@ -291,7 +316,11 @@ impl GameLogic {
                                 list[key].color = Color::RGB(0, 200, 0);
                             },
                             None => {
-                                list[key].color = Color::RGB(0, 0, 0);
+                                if key == self.start_point as usize {
+                                    list[key].color = Color::RGB(200, 0, 0);
+                                } else {
+                                    list[key].color = Color::RGB(0, 0, 0);
+                                }
                             },
                         }
                     }
@@ -310,7 +339,8 @@ impl GameLogic {
                         }
 
                         if self.changing_start == true {
-                            self.start_point = key as f64 / 100.0;
+                     
+                            self.start_point = key as f64;
                         } else {
                             match &self.selected_object {
                                 Some(selected) => {

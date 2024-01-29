@@ -59,7 +59,8 @@ pub struct App {
     pub start_pause: Instant,
     pub paused_time: u128,
     pub reseted: bool,
-    pub testing_song: Option<Testing>
+    pub testing_song: Option<Testing>,
+    pub calibrate_on_start: bool
 }
 
 impl App {
@@ -94,7 +95,8 @@ impl App {
             start_pause: Instant::now(),
             paused_time: 0,
             reseted: false,
-            testing_song: None
+            testing_song: None,
+            calibrate_on_start: true
         }
     }
 

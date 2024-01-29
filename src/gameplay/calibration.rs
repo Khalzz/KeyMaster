@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 use sdl2::{render::Canvas, video::Window, pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
-use crate::{key::GameKey, app::{App, AppState, GameState, CoordinationData}, game_object::GameObject, input::keybutton::KeyButton, input::button_module::Button};
+use crate::{key::GameKey, app::{self, App, AppState, CoordinationData, GameState}, game_object::GameObject, input::keybutton::KeyButton, input::button_module::Button};
 
  pub struct GameLogic { // here we define the data we use on our script
     last_frame: Instant,
@@ -23,14 +23,15 @@ impl GameLogic {
         let timer = Button::new(
             GameObject {
                 active: true, x:(app.width - 40) as f32, y: 10.0, width: 0.0, height: 0.0},
-            String::from("Timer"),
+            Some(String::from("Timer")),
             Color::RGB(100, 100, 100),
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
+            None
         );
-        let enter_timer = Button::new(GameObject {active: true, x:(app.width - 40) as f32, y: 35.0, width: 0.0, height: 0.0},String::from("Timer"),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),);
-        let out_timer = Button::new(GameObject { active: true, x:(app.width - 40) as f32, y: 60.0, width: 0.0, height: 0.0}, String::from("Timer"), Color::RGB(100, 100, 100),Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0));
+        let enter_timer = Button::new(GameObject {active: true, x:(app.width - 40) as f32, y: 35.0, width: 0.0, height: 0.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
+        let out_timer = Button::new(GameObject { active: true, x:(app.width - 40) as f32, y: 60.0, width: 0.0, height: 0.0}, Some(String::from("Timer")), Color::RGB(100, 100, 100),Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0), None);
         // controlers 
         let key_up = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) - 85) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0}, Color::RGB(200, 50, 100));
 
@@ -53,15 +54,15 @@ impl GameLogic {
         app.canvas.set_draw_color(Color::BLACK);
         app.canvas.clear();
         
-        let delta_time = self.delta_time(); // we use "delta time" on everything that moves on this update
+        let delta_time = self.delta_time();
 
         // timer
         let elapsed_time = self.start_time.elapsed();
         let milliseconds = elapsed_time.as_millis() / 10;
-        self.timer.text = format!("{}", milliseconds);
-        self.timer.render(&mut app.canvas, &app.texture_creator, &_font); // show timer
-        self.enter_timer.render(&mut app.canvas, &app.texture_creator, &_font); // show timer
-        self.out_timer.render(&mut app.canvas, &app.texture_creator, &_font); // show timer
+        self.timer.text = Some(format!("{}", milliseconds));
+        self.timer.render(&mut app.canvas, &app.texture_creator, &_font); 
+        self.enter_timer.render(&mut app.canvas, &app.texture_creator, &_font); 
+        self.out_timer.render(&mut app.canvas, &app.texture_creator, &_font); 
 
         // buttons 
         let mut key_buttons = [&self.key_up];
@@ -70,15 +71,17 @@ impl GameLogic {
         }
 
         Self::handle_notes(&mut self.started, &mut self.enter_timer, &mut self.out_timer, &mut self.calibration_note, milliseconds, delta_time, self.canvas_height, &mut app_state, app);
-        Self::event_handler(&mut app_state,&mut event_pump);
+        Self::event_handler(&mut app_state,&mut event_pump, app);
         app.canvas.present();
     }
 
-    fn event_handler(app_state: &mut AppState, event_pump: &mut sdl2::EventPump) {
+    fn event_handler(app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
         for event in event_pump.poll_iter() {
             match event { 
                 Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. }  => {
-                    app_state.state = GameState::MainMenu;
+                    if !app.calibrate_on_start {
+                        app_state.state = GameState::MainMenu;
+                    }
                 }, 
                 _ => {}
             }
@@ -101,12 +104,12 @@ impl GameLogic {
                 *started = false;
                 enter_timer.text_color = Color::RED;
                 app.coordination_data.base_time = milliseconds;
-                enter_timer.text = format!("{}", app.coordination_data.base_time);
+                enter_timer.text = Some(format!("{}", app.coordination_data.base_time));
             } else if !inside && *started == false {
                 *started = true;
                 out_timer.text_color = Color::RED;
                 app.coordination_data.end_time = milliseconds;
-                out_timer.text = format!("{}", app.coordination_data.end_time);
+                out_timer.text = Some(format!("{}", app.coordination_data.end_time));
             }
 
             if app.coordination_data.end_time > 0 && milliseconds >= app.coordination_data.end_time + 50 {

@@ -23,29 +23,32 @@ impl GameLogic<'_> {
         let play = Button::new(
             GameObject {
                 active: true, x:((app.width/2) - (100/2)) as f32, y: 100.0, width: 100.0, height: 50.0},
-            String::from("Play"),
+            Some(String::from("Play")),
             Color::RGB(100, 100, 100),
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
+            None
         );
         let settings = Button::new(
             GameObject {
                 active: true, x:((app.width/2) - (100/2)) as f32, y: 160.0, width: 100.0, height: 50.0},
-            String::from("Settings"),
+            Some(String::from("Settings")),
             Color::RGB(100, 100, 100),
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
+            None
         );
         let exit = Button::new(
             GameObject {
                 active: true, x:((app.width/2) - (100/2)) as f32, y: 220.0, width: 100.0, height: 50.0},
-            String::from("Exit"),
+            Some(String::from("Exit")),
             Color::RGB(100, 100, 100),
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
+            None
         );
 
         let btn_list = [play, settings, exit];

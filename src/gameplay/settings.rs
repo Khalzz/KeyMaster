@@ -24,19 +24,19 @@ impl GameLogic<'_> {
         // main menu
         let controller = Button::new(
             GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: 100.0, width: 100.0, height: 50.0},
-            String::from("Controller"),
+            Some(String::from("Controller")),
             Color::RGB(100, 100, 100),
             Color::WHITE,
             Color::RGB(0, 200, 0),
-            Color::RGB(0, 0, 0),
+            Color::RGB(0, 0, 0),None
         );
         let calibration = Button::new(
             GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: 160.0, width: 100.0, height: 50.0},
-            String::from("Calibration"),
+            Some(String::from("Calibration")),
             Color::RGB(100, 100, 100),
             Color::WHITE,
             Color::RGB(0, 200, 0),
-            Color::RGB(0, 0, 0),
+            Color::RGB(0, 0, 0),None
         );
         let slider = Slider_input::new(
             app,
@@ -47,7 +47,7 @@ impl GameLogic<'_> {
             app.volume_percentage
         );
 
-        let exit = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},String::from("Back"),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),);
+        let exit = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},Some(String::from("Back")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
 
         let btn_list = [controller, calibration, exit];
 
@@ -97,13 +97,14 @@ impl GameLogic<'_> {
 
             // change system of selecting options with arrows to on clicks
                 if btn_list[0].on_click(&event) {
-                    app_state.state = GameState::Controlers
+                    app_state.state = GameState::Controlers;
                 }
                 if btn_list[1].on_click(&event) {
-                    app_state.state = GameState::Calibrating
+                    app_state.state = GameState::Calibrating;
+                    app.calibrate_on_start = false;
                 }
                 if btn_list[2].on_click(&event) {
-                    app_state.state = GameState::MainMenu
+                    app_state.state = GameState::MainMenu;
                 }
         }
     }

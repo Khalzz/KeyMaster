@@ -37,23 +37,31 @@ impl Song {
         let mut right_keys: Vec<GameKey> = Vec::new();
 
         for values in  self.left_keys.iter_mut() {
-            let new_arrow = GameKey::new(GameObject {active: true, x: ((*width/2) - 175) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, *values as u128 - coordination_start, None);
-            left_keys.push(new_arrow);
+            if u128::from(*values) > *coordination_start {
+                let new_arrow = GameKey::new(GameObject {active: true, x: ((*width/2) - 175) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, *values as u128 - coordination_start, None);
+                left_keys.push(new_arrow);
+            }
         }
 
         for values in  self.up_keys.iter_mut() {
-            let new_arrow = GameKey::new(GameObject {active: true, x: ((*width/2) - 75) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, *values as u128 - coordination_start, None);
-            up_keys.push(new_arrow);
+            if u128::from(*values) > *coordination_start {
+                let new_arrow = GameKey::new(GameObject {active: true, x: ((*width/2) - 75) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, *values as u128 - coordination_start, None);
+                up_keys.push(new_arrow);
+            }
         }
 
         for values in  self.bottom_keys.iter_mut() {
-            let new_arrow = GameKey::new(GameObject {active: true, x: ((*width/2) + 25) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, *values as u128 - coordination_start, None);
-            bottom_keys.push(new_arrow);
+            if u128::from(*values) > *coordination_start {                
+                let new_arrow = GameKey::new(GameObject {active: true, x: ((*width/2) + 25) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, *values as u128 - coordination_start, None);
+                bottom_keys.push(new_arrow);
+            }
         }
 
         for values in  self.right_keys.iter_mut() {
-            let new_arrow = GameKey::new(GameObject {active: true, x: ((*width/2) + 125) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, *values as u128 - coordination_start, None);
-            right_keys.push(new_arrow);
+            if u128::from(*values) > *coordination_start {                                
+                let new_arrow = GameKey::new(GameObject {active: true, x: ((*width/2) + 125) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, *values as u128 - coordination_start, None);
+                right_keys.push(new_arrow);
+            }
         }
 
         return vec![left_keys, up_keys, bottom_keys, right_keys];

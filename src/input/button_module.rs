@@ -4,9 +4,11 @@ use sdl2::rect::Rect;
 
 use crate::game_object::GameObject;
 
+#[derive(Clone)]
+
 pub struct Button {
     pub game_object: GameObject,
-    pub text: String,
+    pub text: Option<String>,
     pub color: Color,
     pub text_color: Color,
     pub base_color: Color,
@@ -15,13 +17,14 @@ pub struct Button {
     pub hover: bool,
     pub clicked: bool,
     pub lclicked: bool,
+    pub toggle: Option<bool>
 }
 
 impl Button {
-    pub fn new(game_object: GameObject, text: String, color: Color, text_color: Color, hover_color: Color, clicked_color: Color) -> Self {
+    pub fn new(game_object: GameObject, text: Option<String>, color: Color, text_color: Color, hover_color: Color, clicked_color: Color, toggle: Option<bool>) -> Self {
         Button {
             game_object,
-            text,
+            text: text,
             color,
             text_color,
             base_color: color,
@@ -30,25 +33,45 @@ impl Button {
             hover: false,
             clicked: false,
             lclicked: false,
+            toggle
         }
     }
 
     pub fn render(&self, canvas: &mut Canvas<Window>, texture_creator: &TextureCreator<WindowContext>, font: &Font) {
         if self.game_object.active == true {
-            canvas.set_draw_color(self.color); // it must be a Color::RGB() or other
+            match self.toggle {
+                Some(value) => {
+                    if value {
+                        canvas.set_draw_color(self.clicked_color); // it must be a Color::RGB() or other
+                    } else {
+                        canvas.set_draw_color(self.color); // it must be a Color::RGB() or other
+                    }
+                },
+                None => {
+                    canvas.set_draw_color(self.color); // it must be a Color::RGB() or other
+                },
+            }
             canvas.fill_rect(Rect::new(self.game_object.x as i32, self.game_object.y as i32, self.game_object.width as u32, self.game_object.height as u32)).unwrap();
 
             // Render the button text
-            let surface = font.render(&self.text).solid(self.text_color).expect("Something went wrong while creating the surface");
-            let texture = texture_creator.create_texture_from_surface(&surface).expect("Something went wrong while creating the texture");
+            match &self.text {
+                Some(_text) => {
+                    let surface = font.render(&_text).solid(self.text_color).expect("Something went wrong while creating the surface");
+                    let texture = texture_creator.create_texture_from_surface(&surface).expect("Something went wrong while creating the texture");
+        
+                    // We center the text on the button
+                    let TextureQuery { width: text_width, height: text_height, .. } = texture.query();
+                    let text_x = self.game_object.x as i32 + (self.game_object.width as i32 - text_width as i32) / 2;
+                    let text_y = self.game_object.y as i32 + (self.game_object.height as i32 - text_height as i32) / 2;
+        
+                    // render
+                    canvas.copy(&texture, None, Rect::new(text_x, text_y, text_width, text_height)).unwrap();
+                },
+                None => {
 
-            // We center the text on the button
-            let TextureQuery { width: text_width, height: text_height, .. } = texture.query();
-            let text_x = self.game_object.x as i32 + (self.game_object.width as i32 - text_width as i32) / 2;
-            let text_y = self.game_object.y as i32 + (self.game_object.height as i32 - text_height as i32) / 2;
-
-            // render
-            canvas.copy(&texture, None, Rect::new(text_x, text_y, text_width, text_height)).unwrap();
+                },
+            }
+            
         }
     }
 

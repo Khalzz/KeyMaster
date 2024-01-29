@@ -28,11 +28,12 @@ impl GameLogic<> {
                 width: (app.width as f32 - 20.0),
                 height: 50.0,
             },
-            "Loading".to_owned(),
+            Some("Loading".to_owned()),
             Color::RGB(28, 29, 37),
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
+            None
         );
 
         Self {
@@ -63,21 +64,25 @@ impl GameLogic<> {
                 _ => {}
             }
             for btn in 0..self.btn_list.len() {
-                if self.btn_list[btn].on_click(&event) {
+                if self.btn_list[btn].on_click(&event) || self.btn_list[btn].on_lclick(&event) {
                     if btn == 0 {
                         app_state.state = GameState::MainMenu;
                     } else {
                         // add here a reset for the play
                         self.loading(texture_creator, _font, canvas);
-                        app_state.song_folder = Some(self.btn_list[btn].text.clone());
-                        app_state.state = GameState::Playing;
-                    }
-                } else if self.btn_list[btn].on_lclick(&event) {
-                    if btn != 0 {
-                        self.loading(texture_creator, _font, canvas);
-                        app_state.song_folder = Some(self.btn_list[btn].text.clone());
-                        app_state.state = GameState::Editing;
-                        
+                        match &self.btn_list[btn].text {
+                            Some(_text) => {
+                                app_state.song_folder = Some(_text.clone());
+
+                            },
+                            None => {},
+                        }
+
+                        if self.btn_list[btn].on_lclick(&event) {
+                            app_state.state = GameState::Editing;
+                        } else {
+                            app_state.state = GameState::Playing;
+                        }
                     }
                 }
             }
@@ -97,7 +102,7 @@ impl GameLogic<> {
         let mut songs_buttons: Vec<Button> = vec![];
         let mut position = 50.0;
 
-        let back_button = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},String::from("Back"),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),);
+        let back_button = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},Some(String::from("Back")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
         songs_buttons.push(back_button);
 
         for entry in folders {
@@ -111,11 +116,12 @@ impl GameLogic<> {
                             width: 350.0,
                             height: 50.0,
                         },
-                        entry.file_name().to_string_lossy().to_string(),
+                        Some(entry.file_name().to_string_lossy().to_string()),
                         Color::RGB(100, 100, 100),
                         Color::WHITE,
                         Color::RGB(0, 200, 0),
                         Color::RGB(0, 0, 0),
+                        None
                     ));
                     position += 60.0;
                 }

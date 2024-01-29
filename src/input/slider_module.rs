@@ -25,20 +25,22 @@ impl Slider_input {
     pub fn new(app: &mut App, game_object: GameObject, color: Color, hover_color: Color, clicked_color: Color, percentage: i32) -> Self {
         let text = Button::new(
             GameObject {active: true, x:(game_object.x - 110.0) as f32, y: game_object.y - (50 / 2) as f32 + game_object.height / 2 as f32, width: 100.0, height: 50.0},
-            String::from("Audio"),
+            Some(String::from("Audio")),
             Color::RGB(0, 0, 0),
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
+            None
         );
 
         let text2 = Button::new(
             GameObject {active: true, x:(game_object.x + 10.0 + game_object.width) as f32, y: game_object.y - (50 / 2) as f32 + game_object.height / 2 as f32, width: 100.0, height: 50.0},
-            String::from("0%"),
+            Some(String::from("0%")),
             Color::RGB(0, 0, 0),
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
+            None
         );
 
         let texts = [text, text2];
@@ -71,7 +73,7 @@ impl Slider_input {
                 self.texts[btn].render(&mut app.canvas, &app.texture_creator, _font)
             }
 
-            self.texts[1].text = self.end_percentage.to_string() + "%";
+            self.texts[1].text = Some(self.end_percentage.to_string() + "%");
         }
     }
 
@@ -105,7 +107,6 @@ impl Slider_input {
             if self.hover && self.clicked {
                 self.selected_amount = self.slider_position;
                 self.end_percentage = self.percentage;
-                //println!("{}", (128/self.end_percentage) * 100);
                 if self.end_percentage < 1 {
                     self.end_percentage = 1;
                 }
