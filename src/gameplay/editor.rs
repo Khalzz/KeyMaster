@@ -1,6 +1,6 @@
 use std::{time::{Duration, Instant}, fs};
 use sdl2::{render::{Canvas, TextureCreator}, video::{Window, WindowContext}, pixels::Color, ttf::Font, event::Event, keyboard::Keycode, image::LoadTexture, mixer::{self, Music}, mouse::MouseWheelDirection};
-use crate::{key::GameKey, app::{App, AppState, GameState, self, Testing}, game_object::GameObject, input::keybutton::{KeyButton}, input::button_module::Button, load_song::Song};
+use crate::{key::GameKey, app::{App, AppState, GameState, self, Testing}, game_object::GameObject, input::{keybutton::{KeyButton}, slider_module::Slider_input}, input::button_module::Button, load_song::Song};
 
 pub struct KeyState {
     pub left: bool,
@@ -29,7 +29,8 @@ pub struct GameLogic { // here we define the data we use on our script
     buttons: Vec<Button>,
     changing_start: bool,
     add_key: bool,
-    start_point:  f64
+    start_point:  f64,
+    scroll_slider: Slider_input
 } 
 
 impl GameLogic {
@@ -48,6 +49,20 @@ impl GameLogic {
         let mut bottom_keys = vec![];
         let mut right_keys = vec![];
         let start_index = 0;
+
+
+        let scroll_slider = Slider_input::new(
+            app,
+            GameObject {active: true, x: ((app.width/2) + 450) as f32, y: 0 as f32, width: 50.0, height: app.height as f32},
+            Color::RGB(100, 100, 100),
+            Color::WHITE,
+            Color::RGB(0, 200, 0),
+            app.volume_percentage,
+            true,
+            None,
+            true,
+            20000.0
+        );
 
         match &song_game {
             Some(song_data) => {
@@ -108,7 +123,8 @@ impl GameLogic {
             buttons: vec![save, play, add_single_key, add_testing_start, time_position],
             changing_start: false,
             add_key: false,
-            start_point: 300.0
+            start_point: 300.0,
+            scroll_slider
         }
     }
 
@@ -123,23 +139,6 @@ impl GameLogic {
 
                 for button in &self.buttons {
                     button.render(&mut app.canvas, &app.texture_creator, _font);
-                }
-
-                match &self.song_game {
-                    Some(song) => {
-                        let mut scroller_space = 0.0;
-
-                        for element in 0..song.end {
-                            let mut space = Button::new(GameObject {active: true, x: ((app.width/2) + 250) as f32, y: app.height as f32 - scroller_space, width: 5.0, height: 0.2}, None ,Color::RGB(0, 200, 0), Color::RGB(0, 200, 0), Color::RGB(0,0,0), Color::RGB(0,0,0), None);
-                            if element > self.start_index && element < self.start_index + self.index_range as u128 {
-                                space.color = Color::RGB(90, 90, 90);
-                            }
-                            
-                            space.render(&mut app.canvas, &app.texture_creator, _font);
-                            scroller_space += 0.2;
-                        }
-                    },
-                    None => {},
                 }
 
                 for list in &mut self.keys {
@@ -170,6 +169,7 @@ impl GameLogic {
                     button_key.render(Some("assets/sprites/WhiteKey-Sheet.png"), app);
                 }
 
+                self.scroll_slider.render(app, _font);
                 Self::event_handler(self, app_state, event_pump, app);
                 app.canvas.present();
             },
@@ -178,7 +178,6 @@ impl GameLogic {
     }
 
     fn event_handler(&mut self, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
-        let mut scroll_up = false;
     
         for event in event_pump.poll_iter() {
             match event {
@@ -249,6 +248,17 @@ impl GameLogic {
                     }
                 }
                 _ => {}
+            }
+            
+            match &self.song_game {
+                Some(song_game) => {
+                    let scroll_value = (song_game.end as f32 / 20000.0) * (self.scroll_slider.is_hover(&event, app) as f32);
+
+                    if scroll_value <= song_game.end as f32 - self.index_range as f32 {
+                        self.start_index = scroll_value as u128;
+                    }
+                }
+                None => {}
             }
 
             if self.buttons[0].on_click(&event) { // save
@@ -339,7 +349,6 @@ impl GameLogic {
                         }
 
                         if self.changing_start == true {
-                     
                             self.start_point = key as f64;
                         } else {
                             match &self.selected_object {

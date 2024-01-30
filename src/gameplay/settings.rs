@@ -1,4 +1,4 @@
-use sdl2::{pixels::Color, ttf::Font, event::Event};
+use sdl2::{event::Event, mixer, pixels::Color, ttf::Font};
 use crate::{ app::{App, AppState, GameState, self}, game_object::GameObject, input::{button_module::Button, slider_module}, input::slider_module::Slider_input};
 
 enum MenuSelector {
@@ -44,7 +44,11 @@ impl GameLogic<'_> {
             Color::RGB(100, 100, 100),
             Color::WHITE,
             Color::RGB(0, 200, 0),
-            app.volume_percentage
+            app.volume_percentage,
+            false,
+            Some(String::from("Audio")),
+            true,
+            100.0
         );
 
         let exit = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},Some(String::from("Back")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
@@ -93,7 +97,8 @@ impl GameLogic<'_> {
                 _ => {}
             }
 
-            slider.is_hover(&event, app);
+            mixer::Music::set_volume(((slider.is_hover(&event, app) as f32 / 100.0) * 128.0) as i32);   
+            
 
             // change system of selecting options with arrows to on clicks
                 if btn_list[0].on_click(&event) {
