@@ -15,11 +15,12 @@ pub struct GameKey {
     pub mili: u128,
     pub hover: bool,
     pub holding: bool,
-    pub flag: Option<String>
+    pub flag: Option<String>,
+    pub connected: Option<u128>
 }
 
 impl GameKey {
-    pub fn new(game_object: GameObject, color: Color, speed: f32, mili: u128, flag: Option<String>) -> GameKey {
+    pub fn new(game_object: GameObject, color: Color, speed: f32, mili: u128, flag: Option<String>, connected: Option<u128>) -> GameKey {
         GameKey {
             game_object,
             color: color,
@@ -27,7 +28,8 @@ impl GameKey {
             mili,
             hover: false,
             holding: false,
-            flag
+            flag,
+            connected
         }
     }
 

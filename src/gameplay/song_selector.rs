@@ -44,18 +44,14 @@ impl GameLogic<> {
 
     // this is called every frame
     pub fn update(&mut self, _font: &Font, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
-        app.canvas.set_draw_color(Color::BLACK);
-        app.canvas.clear();
-
         for btn in 0..self.btn_list.len() {
             self.btn_list[btn].render(&mut app.canvas, &app.texture_creator, _font);
         }
 
-        Self::event_handler(self,app_state, event_pump,  &mut app.texture_creator, _font, &mut app.canvas);
-        app.canvas.present();
+        Self::event_handler(self,app_state, event_pump,  _font, app);
     }
 
-    fn event_handler(&mut self, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, texture_creator: &mut TextureCreator<WindowContext>, _font: &Font, canvas: &mut Canvas<Window>) {
+    fn event_handler(&mut self, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, _font: &Font, app: &mut App) {
         for event in event_pump.poll_iter() {
             match event { 
                 Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. }  => {
@@ -69,7 +65,7 @@ impl GameLogic<> {
                         app_state.state = GameState::MainMenu;
                     } else {
                         // add here a reset for the play
-                        self.loading(texture_creator, _font, canvas);
+                        self.loading(&mut app.texture_creator, _font, &mut app.canvas);
                         match &self.btn_list[btn].text {
                             Some(_text) => {
                                 app_state.song_folder = Some(_text.clone());
@@ -79,8 +75,10 @@ impl GameLogic<> {
                         }
 
                         if self.btn_list[btn].on_lclick(&event) {
+                            app.reseted = false;
                             app_state.state = GameState::Editing;
                         } else {
+                            app.reseted = false;
                             app_state.state = GameState::Playing;
                         }
                     }

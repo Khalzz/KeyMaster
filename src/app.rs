@@ -2,7 +2,8 @@
 use std::time::Instant;
 
 use sdl2::mixer::{DEFAULT_CHANNELS, AUDIO_S16LSB, DEFAULT_FORMAT, InitFlag, self, DEFAULT_FREQUENCY, Sdl2MixerContext};
-use sdl2::render::TextureCreator;
+use sdl2::pixels::Color;
+use sdl2::render::{BlendMode, TextureCreator};
 use sdl2::video::WindowContext;
 use sdl2::{video::Window, Sdl, render::Canvas, sys::KeyCode, keyboard::Keycode};
 
@@ -13,6 +14,7 @@ use crate::gameplay::settings;
 use crate::gameplay::song_selector;
 use crate::gameplay::controller;
 use crate::gameplay::calibration;
+use crate::gameplay::alert;
 use crate::load_song::Song;
 
 // in this file we will have the main work flow of our app, as a struct defined mainly to do what we want to do:
@@ -24,7 +26,7 @@ pub enum GameState {
     Calibrating,
     Controlers,
     Quitting,
-    SelectingSong
+    SelectingSong,
 }
 
 pub struct CoordinationData {
@@ -60,7 +62,8 @@ pub struct App {
     pub paused_time: u128,
     pub reseted: bool,
     pub testing_song: Option<Testing>,
-    pub calibrate_on_start: bool
+    pub calibrate_on_start: bool,
+    pub alert_message: String
 }
 
 impl App {
@@ -96,7 +99,8 @@ impl App {
             paused_time: 0,
             reseted: false,
             testing_song: None,
-            calibrate_on_start: true
+            calibrate_on_start: true,
+            alert_message: String::from(""),
         }
     }
 
@@ -120,8 +124,11 @@ impl App {
         let mut calibration = calibration::GameLogic::new(&mut self);
 
         mixer::Music::set_volume(((self.volume_percentage as f32 / 100.0) * 128.0) as i32);
-
+        
         while app_state.is_running {
+            self.canvas.set_draw_color(Color::BLACK);
+            self.canvas.clear();
+
             match app_state.state {
                 GameState::MainMenu => {
                     self.reseted = false; // every other option should need to "reset the reset value"
@@ -164,8 +171,9 @@ impl App {
                     app_state.is_running = false;
                     mixer::close_audio();
                 }
-                
             }
+        self.canvas.present();
+
         }
     }
 

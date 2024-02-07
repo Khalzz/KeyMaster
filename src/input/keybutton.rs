@@ -2,24 +2,35 @@ use sdl2::image::LoadTexture;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use sdl2::pixels::Color;
+use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fs;
+use std::time::Instant;
 
 use crate::app::App;
 use crate::game_object::GameObject;
 use crate::load_song::Song;
+
+#[derive(Clone,Debug,Serialize,Deserialize,Copy)]
+
+pub struct Note {
+    pub time: u128,
+    pub holding: u128
+}
 
 pub struct KeyButton {
     pub game_object: GameObject,
     pub color: Color,
     pub pressed: bool,
     pub repeat: bool,
-    pub left_keys: Vec<u64>,
-    pub right_keys: Vec<u64>,
-    pub up_keys: Vec<u64>,
-    pub down_keys: Vec<u64>,
+    pub left_keys: Vec<Note>,
+    pub right_keys: Vec<Note>,
+    pub up_keys: Vec<Note>,
+    pub down_keys: Vec<Note>,
     pub image_array: Vec<Rect>,
-    pub state: usize
+    pub state: usize,
+    pub timer: Instant,
+    pub pressed_time: u128,
 }
 
 impl KeyButton {
@@ -38,7 +49,9 @@ impl KeyButton {
             up_keys: vec![],
             down_keys: vec![],
             image_array,
-            state: 0
+            state: 0,
+            timer: Instant::now(),
+            pressed_time: 0
         }
     }
 
@@ -71,18 +84,8 @@ impl KeyButton {
                     if self.repeat == true {
 
                         // song generation
-                        if key == play_keys[0] {
-                            self.left_keys.push(milliseconds as u64);
-                        }
-                        if key == play_keys[3] {
-                            self.right_keys.push(milliseconds as u64);
-                        }
-                        if key == play_keys[1] {
-                            self.up_keys.push(milliseconds as u64);
-                        }
-                        if key == play_keys[2] {
-                            self.down_keys.push(milliseconds as u64);
-                        }
+                        self.timer = Instant::now();
+                        self.pressed_time = milliseconds;
 
                         self.repeat = false;
                         self.pressed = true;
@@ -91,6 +94,22 @@ impl KeyButton {
                 },
                 sdl2::event::Event::KeyUp { keycode: Some(key_value), .. } if *key_value == key => {
                     if self.repeat == false {
+                        let elapsed_time = self.timer.elapsed();
+                        let note = Note { time: self.pressed_time, holding: elapsed_time.as_millis() / 10};
+
+                        if key == play_keys[0] {
+                            self.left_keys.push(note);
+                        }
+                        if key == play_keys[3] {
+                            self.right_keys.push(note);
+                        }
+                        if key == play_keys[1] {
+                            self.up_keys.push(note);
+                        }
+                        if key == play_keys[2] {
+                            self.down_keys.push(note);
+                        }
+
                         self.repeat = true;
                         self.pressed = false;
                         self.state = 0;

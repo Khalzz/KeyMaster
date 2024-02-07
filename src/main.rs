@@ -5,6 +5,10 @@ mod key;
 mod game_object;
 mod load_song;
 
+mod UI {
+    pub mod text;
+}
+
 mod input {
     pub mod button_module;
     pub mod keybutton;
@@ -19,6 +23,7 @@ mod gameplay {
     pub mod calibration;
     pub mod settings;
     pub mod controller;
+    pub mod alert;
 }
 
 fn main() -> Result<(), String> {

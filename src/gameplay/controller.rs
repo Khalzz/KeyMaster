@@ -30,9 +30,6 @@ impl GameLogic {
 
     // this is called every frame
     pub fn update(&mut self, _font: &Font, mut app_state: &mut AppState, mut event_pump: &mut sdl2::EventPump, app: &mut App) {
-        app.canvas.set_draw_color(Color::BLACK);
-        app.canvas.clear();
-
         for btn in 0..self.btn_list.len() {
             self.btn_list[btn].render(&mut app.canvas, &app.texture_creator, _font);
             self.back_button.render(&mut app.canvas, &mut app.texture_creator, _font);
@@ -43,7 +40,6 @@ impl GameLogic {
                 }
         }
         Self::event_handler(&mut app_state,&mut event_pump, &mut self.key_state, &mut self.btn_list, &mut app.play_keys, &mut self.back_button);
-        app.canvas.present();
     }
 
     fn event_handler(app_state: &mut AppState, event_pump: &mut sdl2::EventPump, key_state: &mut [bool;4], btn_list: &mut Vec<Button>, play_keys: &mut [Keycode;4], back_button: &mut Button) {

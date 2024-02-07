@@ -73,10 +73,6 @@ impl GameLogic<'_> {
             self.started = false;
         }
 
-        app.canvas.set_draw_color(Color::BLACK);
-        app.canvas.clear();
-
-
         self.actual_opt = self.opt_list[self.actual_setting];
         for btn in 0..self.btn_list.len() {
             self.btn_list[btn].render(&mut app.canvas, &app.texture_creator, _font)
@@ -85,7 +81,6 @@ impl GameLogic<'_> {
         self.slider.render(app, _font);
 
         Self::event_handler(app_state, event_pump, &mut self.btn_list, &mut self.slider, app);
-        app.canvas.present();
     }
 
     fn event_handler(app_state: &mut AppState, event_pump: &mut sdl2::EventPump,  btn_list: &mut [Button;3], slider: &mut Slider_input, app: &mut App) {

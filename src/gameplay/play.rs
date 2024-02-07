@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
-use sdl2::{render::{Canvas, TextureCreator}, video::{Window, WindowContext}, pixels::Color, ttf::Font, event::Event, keyboard::Keycode, image::LoadTexture, mixer::{self, Music}};
-use crate::{key::GameKey, app::{App, AppState, GameState, self}, game_object::GameObject, input::keybutton::{KeyButton}, input::button_module::Button, load_song::Song};
+use sdl2::{pixels::Color, ttf::Font, event::Event, keyboard::Keycode, mixer::{self, Music}};
+use crate::{app::{App, AppState, GameState}, game_object::GameObject, input::{button_module::Button, keybutton::KeyButton}, key::GameKey, load_song::Song};
 
 pub struct KeyState {
     pub left: bool,
@@ -25,37 +25,66 @@ pub struct GameLogic<'a> { // here we define the data we use on our script
     points: u128,
     pause_elements: Vec<Button>,
     ui_elements: Vec<Button>,
-    paused: bool,
     paused_time: Duration,
-    total_time: Duration
+    error: bool,
+    error_elements: Vec<Button>,
 } 
 
 impl GameLogic<'_> {
     // this is called once
     pub fn new(app: &mut App,  app_state: &mut AppState) -> Self {
         let mut song = None;
-
         let mut song_keys = None;
+        let mut error = false;
+        app.alert_message = String::from("");
+        app.paused = false;
+
         match &app_state.song_folder {
-            Some(folder) => {
-                song = Some(mixer::Music::from_file("./songs/".to_owned() + folder + "/audio.mp3").expect("Not found"));
-                println!("{}", folder);
+            Some(folder) => { 
+                match mixer::Music::from_file("./songs/".to_owned() + folder + "/audio.mp3") {
+                    Ok(song_ok) => song = Some(song_ok),
+                    Err(_) => {
+                        eprintln!("The song didn't loaded right for some reason: {}", folder);
+                        app.alert_message = String::from("the song audio didn't loaded right");
+                        app.paused = true;
+                        error = true;
+                    },
+                }
 
                 match &app.testing_song {
                     Some(testing) => {
-                        let song_game = Song::new(folder);
-                        song_keys = Some(testing.song.clone().get_keys(&mut app.width, &app.coordination_data.base_time, app.coordination_data.key_speed));
+                        song_keys = Some(testing.song.clone().get_keys(app, false));
                     },
                     None => {
-                        let song_game = Song::new(folder);
-                        song_keys = Some(song_game.get_keys(&mut app.width, &app.coordination_data.base_time, app.coordination_data.key_speed));
+                        let mut song_game: Song = Song {
+                            name: String::from(""),
+                            left_keys: vec![],
+                            up_keys: vec![],
+                            bottom_keys: vec![],
+                            right_keys: vec![],
+                            end: 0,
+                            
+                        };
+                        match Song::new(folder) {
+                            Ok(song) => {
+                                song_game = song
+                            },
+                            Err(_) => {
+                                app.alert_message = String::from("the song didn't loaded right");
+                                app.paused = true;
+                                error = true;
+                            },
+                        }
+                        song_keys = Some(song_game.get_keys(app, false));
                     },
                 }
-                
             },
-            None => {},
+            None => {
+                app.alert_message = String::from("the song didn't loaded right");
+                app.paused = true;
+                error = true;
+            },
         }
-
 
         // UI ELEMENT
         let ui_points = Button::new(GameObject { active: true, x:(app.width - 40) as f32, y: 10.0, width: 0.0, height: 0.0}, Some(String::from("Points")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0),None);
@@ -66,9 +95,15 @@ impl GameLogic<'_> {
         let resume = Button::new(GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height - (app.height / 2) + 50) as f32, width: 100.0, height: 50.0},Some(String::from("resume")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
         let exit = Button::new(GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height - (app.height / 2) + 110) as f32, width: 100.0, height: 50.0},Some(String::from("exit")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
 
+        // Error UI
+        let error_text = Button::new(GameObject {active: true, x: 0.0, y: 0.0, width: app.width as f32, height: app.height as f32},Some(app.alert_message.clone()),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
+        let ok_button = Button::new(GameObject { active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height as f32/2.0) + 200.0 as f32, width: 100.0, height: 50.0},Some(String::from("OK")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
+
+
         // UI LISTS
         let ui_elements = vec![ui_points, timer];
         let pause_elements = vec![pause_text, resume, exit];
+        let error_elements = vec![error_text, ok_button];
 
         // controlers 
         let key_left = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) - 195) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0},Color::RGB(200, 50, 100));
@@ -93,11 +128,11 @@ impl GameLogic<'_> {
             started_song: true,
             song,
             points: 0,
-            paused: false,
             paused_time: Duration::new(0, 0),
-            total_time: Duration::new(0, 0),
             pause_elements,
-            ui_elements
+            ui_elements,
+            error,
+            error_elements,
         }
     }
 
@@ -105,80 +140,88 @@ impl GameLogic<'_> {
     pub fn update(&mut self, _font: &Font, mut app_state: &mut AppState, mut event_pump: &mut sdl2::EventPump, app: &mut App) {
         match app_state.song_folder {
             Some(_) => {
-                match &app.testing_song {
-                    Some(_song) => {
-                        // println!("{}", _song.start_point);
-                    },
-                    None => {},
-                }
-                
-                app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
-                app.canvas.clear();
-                
                 let delta_time = self.delta_time(); // we use "delta time" on everything that moves on this update
 
                 // timer
                 let elapsed_time = self.start_time.elapsed() - self.paused_time;
                 let mut milliseconds = 0;
-                match &app.testing_song {
-                    Some(_song) => {
-                        milliseconds = ((elapsed_time.as_millis() / 10) - app.paused_time / 10) + ((_song.start_point) + 300.0) as u128
-                    },
-                    None => {
-                        milliseconds = (elapsed_time.as_millis() / 10) - app.paused_time / 10
-                    },
-                }
-
-                // buttons 
-                let mut key_buttons = [&self.key_left, &self.key_up, &self.key_right, &self.key_bottom];
-                for button_key in key_buttons.iter_mut() {
-                    button_key.render(Some("assets/sprites/WhiteKey-Sheet.png"), app);
-                }
-
-                match self.song_keys {
-                    Some(_) => Self::handle_notes(self, milliseconds, delta_time, app),
-                    None => {},
-                } 
-
-                self.ui_elements[0].text = Some(self.points.to_string()); // point text
-                self.ui_elements[1].text = Some(format!("{}", milliseconds)); // timer
-
+                
                 if app.paused {
                     milliseconds = 0;
-                    for button in &self.pause_elements {
-                        button.render(&mut app.canvas, &app.texture_creator, &_font);
+                    if self.error == true{
+                        for button in &self.error_elements {
+                            button.render(&mut app.canvas, &app.texture_creator, &_font);
+                        }
+                    } else {
+                        app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
+                        app.canvas.clear();
+                        for button in &self.pause_elements {
+                            button.render(&mut app.canvas, &app.texture_creator, &_font);
+                        }
                     }
                 } else {
-                    for button in &self.ui_elements {
-                        button.render(&mut app.canvas, &app.texture_creator, &_font);
-                    }
-                }
+                    // clearing
+                    app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
+                    app.canvas.clear();
 
-                // audio loading and playing
-                if milliseconds >= 300 && self.started_song == true {
-                    match app_state.state {
-                        GameState::Playing => {
-                            self.started_song = false;
-                            match &self.song {
-                                Some(song) => {
-                                    song.play(1);
-                                    match &app.testing_song {
-                                        Some(testing) => {
-                                            mixer::Music::set_pos(((elapsed_time.as_millis() / 10) - app.paused_time / 10) as f64 + (testing.start_point) as f64 / 100.0);
-                                        },
-                                        None => {},
-                                    }
-
-                                },
-                                None => {},
-                            }
-                        },   
-                        _ => {}
+                    match &app.testing_song {
+                        Some(_song) => {
+                            milliseconds = ((elapsed_time.as_millis() / 10) - (if app.paused_time > 0 { app.paused_time } else { 1 }) / 10) + ((_song.start_point) + 300.0) as u128
+                        },
+                        None => {
+                            milliseconds = (elapsed_time.as_millis() / 10) - (if app.paused_time > 0 { app.paused_time } else { 1 }) / 10
+                        },
                     }
-                }
+
+                    let mut key_buttons = [&self.key_left, &self.key_up, &self.key_right, &self.key_bottom];
+                    for button_key in key_buttons.iter_mut() {
+                        button_key.render(Some("assets/sprites/WhiteKey-Sheet.png"), app);
+                    }
+
+                    match self.song_keys {
+                        Some(_) => Self::handle_notes(self, milliseconds, delta_time, app),
+                        None => {},
+                    } 
+
+                    self.ui_elements[0].text = Some(self.points.to_string()); // point text
+                    self.ui_elements[1].text = Some(format!("{}", milliseconds)); // timer
+
+                        for button in &self.ui_elements {
+                            button.render(&mut app.canvas, &app.texture_creator, &_font);
+                        }
+                    
+
+                    // audio loading and playing
+                    if milliseconds >= 300 && self.started_song == true {
+                        match app_state.state {
+                            GameState::Playing => {
+                                self.started_song = false;
+                                match &self.song {
+                                    Some(song) => {
+                                        song.play(1);
+                                        match &app.testing_song {
+                                            Some(testing) => {
+                                                match mixer::Music::set_pos(((elapsed_time.as_millis() / 10) - app.paused_time / 10) as f64 + (testing.start_point) as f64 / 100.0) {
+                                                    Ok(_) => {},
+                                                    Err(_) => {
+                                                        app.alert_message = String::from("the song position wasn't loaded correctly");
+                                                        app.paused = true;
+                                                        self.error = true;
+                                                    },
+                                                };
+                                            },
+                                            None => {},
+                                        }
+                                    },
+                                    None => {},
+                                }
+                            },   
+                            _ => {}
+                        }
+                    }
+                } 
 
                 Self::event_handler(self, milliseconds, &mut app_state, &mut event_pump, app);
-                app.canvas.present();
             },
             None => {},
         }
@@ -191,7 +234,7 @@ impl GameLogic<'_> {
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. }  => {
                     match app.testing_song {
                         Some(_) => {
-                            Self::reset(self, app, app_state);
+                            Self::reset(app, app_state);
                             app_state.state = GameState::Editing
                         },
                         None => {    
@@ -210,12 +253,16 @@ impl GameLogic<'_> {
                 _ => {}
             }
             
-            if app.paused {
+            if app.paused && !self.error {
                 if self.pause_elements[1].on_click(&event) {
                     Self::unpause(app);
                 } 
                 if self.pause_elements[2].on_click(&event) {
-                    Self::reset(self, app, app_state);
+                    Self::reset(app, app_state);
+                }
+            } else if app.paused && self.error {
+                if self.error_elements[1].on_click(&event) {
+                    Self::reset(app, app_state)
                 }
             }
 
@@ -240,7 +287,7 @@ impl GameLogic<'_> {
         app.paused_time += app.start_pause.elapsed().as_millis();
     }
 
-    fn reset(&mut self, app: &mut App, app_state: &mut AppState) {
+    fn reset(app: &mut App, app_state: &mut AppState) {
         app.reseted = false;
         Self::unpause(app);
         mixer::Music::halt();

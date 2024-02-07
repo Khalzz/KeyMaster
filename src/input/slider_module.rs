@@ -59,7 +59,6 @@ impl Slider_input {
             texts.push(percentage_text)
         }
 
-
         let width = game_object.width;
         let height = game_object.height;
 
@@ -72,8 +71,8 @@ impl Slider_input {
             hover: false,
             clicked: false,
             percentage,
-            selected_amount: if vertical { ((height as i32 /100) * percentage) } else { ((width as i32 /100) * percentage) },
-            slider_position: if vertical { ((height as i32 /100) * percentage) } else { ((width as i32 /100) * percentage) },
+            selected_amount: if vertical { (height as i32 /100) * percentage } else { ((width as i32 /100) * percentage) },
+            slider_position: if vertical { (height as i32 /100) * percentage } else { ((width as i32 /100) * percentage) },
             end_percentage: percentage,
             texts,
             with_percentage,
@@ -155,5 +154,10 @@ impl Slider_input {
             return 0;
         }
     }
+
+    pub fn set_percentage(&mut self, value: u128) {
+        self.slider_position = 500;
+    }
+
 
 }

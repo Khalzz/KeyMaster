@@ -1,5 +1,5 @@
 use sdl2::{render::{Canvas, TextureCreator}, video::{Window, WindowContext}, pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
-use crate::{ app::{App, AppState, GameState}, game_object::GameObject, input::button_module::Button};
+use crate::{ app::{App, AppState, GameState}, game_object::GameObject, input::button_module::Button, UI::text::Label};
 
 enum MenuSelector {
     Play,
@@ -11,7 +11,7 @@ pub struct GameLogic<'a> { // here we define the data we use on our script
     opt_list: [&'a MenuSelector; 3],
     actual_opt: &'a MenuSelector,
     actual_setting: usize,
-    btn_list: [Button;3]
+    btn_list: [Button;3],
 }
 
 impl GameLogic<'_> {
@@ -62,9 +62,6 @@ impl GameLogic<'_> {
     }
 
     pub fn update(&mut self, _font: &Font, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
-        app.canvas.set_draw_color(Color::BLACK);
-        app.canvas.clear();
-
         // rendering buttons
         for btn in 0..self.btn_list.len() {
             self.btn_list[btn].render(&mut app.canvas, &app.texture_creator, _font);
@@ -72,7 +69,6 @@ impl GameLogic<'_> {
 
         // input reading and sending stuff to the canvas
         Self::event_handler(app_state, event_pump, &mut self.actual_setting, self.actual_opt, &mut self.btn_list);
-        app.canvas.present();
     }
 
     fn event_handler(app_state: &mut AppState, event_pump: &mut sdl2::EventPump, actual_setting: &mut usize, actual_opt: &MenuSelector, btn_list: &mut [Button;3]) {

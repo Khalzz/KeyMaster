@@ -17,7 +17,7 @@ use crate::{key::GameKey, app::{self, App, AppState, CoordinationData, GameState
 impl GameLogic {
     // this is called once
     pub fn new(app: &mut App) -> Self {
-        let calibration_note = GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, None);
+        let calibration_note = GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, None, None);
 
         // UI ELEMENT
         let timer = Button::new(
@@ -50,10 +50,6 @@ impl GameLogic {
 
     // this is called every frame
     pub fn update(&mut self, _font: &Font, mut app_state: &mut AppState, mut event_pump: &mut sdl2::EventPump, app: &mut App) {
-
-        app.canvas.set_draw_color(Color::BLACK);
-        app.canvas.clear();
-        
         let delta_time = self.delta_time();
 
         // timer
@@ -72,7 +68,6 @@ impl GameLogic {
 
         Self::handle_notes(&mut self.started, &mut self.enter_timer, &mut self.out_timer, &mut self.calibration_note, milliseconds, delta_time, self.canvas_height, &mut app_state, app);
         Self::event_handler(&mut app_state,&mut event_pump, app);
-        app.canvas.present();
     }
 
     fn event_handler(app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
