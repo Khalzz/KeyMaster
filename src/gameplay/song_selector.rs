@@ -17,7 +17,6 @@ pub struct GameLogic<> { // here we define the data we use on our script
 impl GameLogic<> {
     // this is called once
     pub fn new(mut app: &mut App) -> Self {
-
         // read every file in ./song
         let songs = Self::load_songs("./songs".to_owned(), &mut app);
         let loading_text = Button::new(
@@ -74,7 +73,7 @@ impl GameLogic<> {
                             None => {},
                         }
 
-                        if self.btn_list[btn].on_lclick(&event) {
+                        if self.btn_list[btn].on_lclick(&event) && app.can_edit {
                             app.reseted = false;
                             app_state.state = GameState::Editing;
                         } else {

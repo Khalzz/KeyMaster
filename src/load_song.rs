@@ -49,10 +49,10 @@ impl Song {
         
         if edit == true {
             for spaces in 0..self.end {
-                left_keys.push(GameKey::new(GameObject {active: true, x: ((width/2) - 160) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, spaces as u128, None, None));
-                up_keys.push(GameKey::new(GameObject {active: true, x: ((width/2) - 60) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, spaces as u128, None, None));
-                bottom_keys.push(GameKey::new(GameObject {active: true, x: ((width/2) + 40) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, spaces as u128, None, None));
-                right_keys.push(GameKey::new(GameObject {active: true, x: ((width/2) + 140) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, spaces as u128, None, None));
+                left_keys.push(GameKey::new(GameObject {active: true, x: ((width/2) - 160) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, spaces as u128, None, None, false));
+                up_keys.push(GameKey::new(GameObject {active: true, x: ((width/2) - 60) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, spaces as u128, None, None, false));
+                bottom_keys.push(GameKey::new(GameObject {active: true, x: ((width/2) + 40) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, spaces as u128, None, None, false));
+                right_keys.push(GameKey::new(GameObject {active: true, x: ((width/2) + 140) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, spaces as u128, None, None, false));
             }
 
             Self::edit_list(self.left_keys.clone(),((width/2) - 175), ((width/2) - 160), &mut left_keys, width, coordination_start, key_speed, "Left".to_owned());
@@ -76,14 +76,14 @@ impl Song {
                     for between_index in 0..values.holding {
                         let new_arrow: GameKey;
                         if between_index == 0 {
-                            new_arrow = GameKey::new(GameObject {active: true, x: x as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, (values.time - coordination_start) + between_index, Some(flag.clone()),None);
+                            new_arrow = GameKey::new(GameObject {active: true, x: x as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, (values.time - coordination_start) + between_index, Some(flag.clone()),None, false);
                         } else {
-                            new_arrow = GameKey::new(GameObject {active: true, x: x2 as f32, y: -100.0, width: 20.0, height: 50.0}, Color::RGB(0, 200, 200), key_speed, (values.time - coordination_start) + between_index, Some(flag.clone()),None);
+                            new_arrow = GameKey::new(GameObject {active: true, x: x2 as f32, y: -100.0, width: 20.0, height: 50.0}, Color::RGB(0, 200, 200), key_speed, (values.time - coordination_start) + between_index, Some(flag.clone()),None, true);
                         }
                         keys_list.push(new_arrow);
                     }
                 } else {
-                    let new_arrow = GameKey::new(GameObject {active: true, x: x as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, values.time - coordination_start, Some(flag.clone()), None);
+                    let new_arrow = GameKey::new(GameObject {active: true, x: x as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, values.time - coordination_start, Some(flag.clone()), None, false);
                     keys_list.push(new_arrow);
                 }
             }
@@ -95,10 +95,10 @@ impl Song {
             match Self::contains_note(i as u128, self_list.clone()) {
                 Some(note) => {
                     if note.holding >= 50 {
-                        keys_list[i] = GameKey::new(GameObject {active: true, x: x as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(200, 200, 0), key_speed, (note.time - coordination_start), Some(flag.clone()),Some(i as u128 + note.holding));
-                        keys_list[i + note.holding as usize] = GameKey::new(GameObject {active: true, x: x2 as f32, y: -100.0, width: 20.0, height: 6.0}, Color::RGB(0, 0, 200), key_speed, (note.time - coordination_start) + note.holding, Some(flag.clone()), Some(i as u128))
+                        keys_list[i] = GameKey::new(GameObject {active: true, x: x as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(200, 200, 0), key_speed, (note.time - coordination_start), Some(flag.clone()),Some(i as u128 + note.holding), false);
+                        keys_list[i + note.holding as usize] = GameKey::new(GameObject {active: true, x: x2 as f32, y: -100.0, width: 20.0, height: 6.0}, Color::RGB(0, 0, 200), key_speed, (note.time - coordination_start) + note.holding, Some(flag.clone()), Some(i as u128), false)
                     } else {
-                        keys_list[i] = GameKey::new(GameObject {active: true, x: x as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, note.time - coordination_start, None, None);
+                        keys_list[i] = GameKey::new(GameObject {active: true, x: x as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), key_speed, note.time - coordination_start, None, None, false);
                     }
                 },
                 None => {},

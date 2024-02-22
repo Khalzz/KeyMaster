@@ -25,9 +25,12 @@ pub struct GameLogic<'a> { // here we define the data we use on our script
     points: u128,
     pause_elements: Vec<Button>,
     ui_elements: Vec<Button>,
+    end_elements: Vec<Button>,
     paused_time: Duration,
     error: bool,
     error_elements: Vec<Button>,
+    song_end: u128,
+    end: bool
 } 
 
 impl GameLogic<'_> {
@@ -35,6 +38,7 @@ impl GameLogic<'_> {
     pub fn new(app: &mut App,  app_state: &mut AppState) -> Self {
         let mut song = None;
         let mut song_keys = None;
+        let mut song_end = 0;
         let mut error = false;
         app.alert_message = String::from("");
         app.paused = false;
@@ -75,6 +79,7 @@ impl GameLogic<'_> {
                                 error = true;
                             },
                         }
+                        song_end = song_game.end;
                         song_keys = Some(song_game.get_keys(app, false));
                     },
                 }
@@ -87,7 +92,8 @@ impl GameLogic<'_> {
         }
 
         // UI ELEMENT
-        let ui_points = Button::new(GameObject { active: true, x:(app.width - 40) as f32, y: 10.0, width: 0.0, height: 0.0}, Some(String::from("Points")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0),None);
+        let ui_points = Button::new(GameObject { active: true, x:((app.width/2) - 70 ) as f32, y: 10.0, width: 140.0, height: 30.0}, Some(String::from("Points")),Color::RGB(200, 100, 100), Color::WHITE, Color::RGB(200, 10, 0), Color::RGB(200, 0, 0),None);
+
         let timer = Button::new(GameObject {active: true, x:(app.width - 40) as f32, y: 30.0, width: 0.0, height: 0.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
 
         // PAUSE UI
@@ -99,10 +105,14 @@ impl GameLogic<'_> {
         let error_text = Button::new(GameObject {active: true, x: 0.0, y: 0.0, width: app.width as f32, height: app.height as f32},Some(app.alert_message.clone()),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
         let ok_button = Button::new(GameObject { active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height as f32/2.0) + 200.0 as f32, width: 100.0, height: 50.0},Some(String::from("OK")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
 
+        // End UI
+        let end_text = Button::new(GameObject {active: true, x: 0.0, y: 0.0, width: app.width as f32, height: app.height as f32},Some(String::from("Congrats!!!")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
+        let back_to_menu = Button::new(GameObject {active: true, x:((app.width/2) - (160/2)) as f32, y: (app.height - (app.height / 2) + 50) as f32, width: 160.0, height: 50.0},Some(String::from("Back to menu")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
 
         // UI LISTS
         let ui_elements = vec![ui_points, timer];
         let pause_elements = vec![pause_text, resume, exit];
+        let end_elements = vec![end_text, back_to_menu];
         let error_elements = vec![error_text, ok_button];
 
         // controlers 
@@ -131,8 +141,11 @@ impl GameLogic<'_> {
             paused_time: Duration::new(0, 0),
             pause_elements,
             ui_elements,
+            end_elements,
             error,
             error_elements,
+            song_end,
+            end: false
         }
     }
 
@@ -146,7 +159,7 @@ impl GameLogic<'_> {
                 let elapsed_time = self.start_time.elapsed() - self.paused_time;
                 let mut milliseconds = 0;
                 
-                if app.paused {
+                if app.paused && !self.end{
                     milliseconds = 0;
                     if self.error == true{
                         for button in &self.error_elements {
@@ -160,65 +173,75 @@ impl GameLogic<'_> {
                         }
                     }
                 } else {
-                    // clearing
-                    app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
-                    app.canvas.clear();
-
-                    match &app.testing_song {
-                        Some(_song) => {
-                            milliseconds = ((elapsed_time.as_millis() / 10) - (if app.paused_time > 0 { app.paused_time } else { 1 }) / 10) + ((_song.start_point) + 300.0) as u128
-                        },
-                        None => {
-                            milliseconds = (elapsed_time.as_millis() / 10) - (if app.paused_time > 0 { app.paused_time } else { 1 }) / 10
-                        },
-                    }
-
-                    let mut key_buttons = [&self.key_left, &self.key_up, &self.key_right, &self.key_bottom];
-                    for button_key in key_buttons.iter_mut() {
-                        button_key.render(Some("assets/sprites/WhiteKey-Sheet.png"), app);
-                    }
-
-                    match self.song_keys {
-                        Some(_) => Self::handle_notes(self, milliseconds, delta_time, app),
-                        None => {},
-                    } 
-
-                    self.ui_elements[0].text = Some(self.points.to_string()); // point text
-                    self.ui_elements[1].text = Some(format!("{}", milliseconds)); // timer
-
-                        for button in &self.ui_elements {
+                    if self.end == true {
+                        app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
+                        app.canvas.clear();
+                        self.end_elements[0].text = Some("Congrats, you got ".to_owned() + &self.points.to_string().to_owned() + " points");
+                        for button in &self.end_elements {
                             button.render(&mut app.canvas, &app.texture_creator, &_font);
                         }
-                    
+                    } else {
+                        // clearing
+                        app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
+                        app.canvas.clear();
 
-                    // audio loading and playing
-                    if milliseconds >= 300 && self.started_song == true {
-                        match app_state.state {
-                            GameState::Playing => {
-                                self.started_song = false;
-                                match &self.song {
-                                    Some(song) => {
-                                        song.play(1);
-                                        match &app.testing_song {
-                                            Some(testing) => {
-                                                match mixer::Music::set_pos(((elapsed_time.as_millis() / 10) - app.paused_time / 10) as f64 + (testing.start_point) as f64 / 100.0) {
-                                                    Ok(_) => {},
-                                                    Err(_) => {
-                                                        app.alert_message = String::from("the song position wasn't loaded correctly");
-                                                        app.paused = true;
-                                                        self.error = true;
-                                                    },
-                                                };
-                                            },
-                                            None => {},
-                                        }
-                                    },
-                                    None => {},
-                                }
-                            },   
-                            _ => {}
+                        match &app.testing_song {
+                            Some(_song) => {
+                                milliseconds = ((elapsed_time.as_millis() / 10) - (if app.paused_time > 0 { app.paused_time } else { 1 }) / 10) + ((_song.start_point) + 300.0) as u128
+                            },
+                            None => {
+                                milliseconds = (elapsed_time.as_millis() / 10) - (if app.paused_time > 0 { app.paused_time } else { 1 }) / 10
+                            },
+                        }
+
+                        let mut key_buttons = [&self.key_left, &self.key_up, &self.key_right, &self.key_bottom];
+                        for button_key in key_buttons.iter_mut() {
+                            button_key.render(Some("assets/sprites/WhiteKey-Sheet.png"), app);
+                        }
+
+                        match self.song_keys {
+                            Some(_) => Self::handle_notes(self, milliseconds, delta_time, app),
+                            None => {},
+                        } 
+
+                        self.ui_elements[0].text = Some(self.points.to_string()); // point text
+                        self.ui_elements[1].text = Some(format!("{}", milliseconds)); // timer
+
+                            for button in &self.ui_elements {
+                                button.render(&mut app.canvas, &app.texture_creator, &_font);
+                            }
+                        
+
+                        // audio loading and playing
+                        if milliseconds >= 300 && self.started_song == true {
+                            match app_state.state {
+                                GameState::Playing => {
+                                    self.started_song = false;
+                                    match &self.song {
+                                        Some(song) => {
+                                            song.play(1);
+                                            match &app.testing_song {
+                                                Some(testing) => {
+                                                    match mixer::Music::set_pos(((elapsed_time.as_millis() / 10) - app.paused_time / 10) as f64 + (testing.start_point) as f64 / 100.0) {
+                                                        Ok(_) => {},
+                                                        Err(_) => {
+                                                            app.alert_message = String::from("the song position wasn't loaded correctly");
+                                                            app.paused = true;
+                                                            self.error = true;
+                                                        },
+                                                    };
+                                                },
+                                                None => {},
+                                            }
+                                        },
+                                        None => {},
+                                    }
+                                },   
+                                _ => {}
+                            }
                         }
                     }
+
                 } 
 
                 Self::event_handler(self, milliseconds, &mut app_state, &mut event_pump, app);
@@ -264,6 +287,10 @@ impl GameLogic<'_> {
                 if self.error_elements[1].on_click(&event) {
                     Self::reset(app, app_state)
                 }
+            } else if self.end{
+                if self.end_elements[1].on_click(&event) {
+                    Self::reset(app, app_state)
+                }
             }
 
             self.key_state.left = self.key_left.update(&mut self.maked_song, milliseconds ,&event, app.play_keys[0],&mut app.play_keys);
@@ -304,33 +331,41 @@ impl GameLogic<'_> {
                     3 => Some(self.key_state.right),
                     _ => None
                 };
-        
+    
                 for note in song_keys[keys].iter_mut() {
+                    if milliseconds > self.song_end {
+                        self.end = true;
+                        mixer::Music::pause();
+                    }
+
                     if note.mili < milliseconds {
                         note.render(&mut app.canvas);
                         note.update(delta_time, app.coordination_data.key_speed);
-                        
+    
                         if actual_key.is_some() {
                             let actual_key = actual_key.unwrap();
-                            
-                            if (note.game_object.y > (self.canvas_height - 210) as f32) && (note.game_object.y < (self.canvas_height - 90) as f32) && actual_key == true {
-                                self.points += 100; // its getting called a lot of times
+    
+                            if (note.game_object.y > (self.canvas_height - 210) as f32) && (note.game_object.y < (self.canvas_height - 90) as f32) && actual_key {
+                                if note.game_object.active {
+                                    if note.holding == true {
+                                        self.points += 1; // its not calling aparently
+                                    } else {
+                                        self.points += 100; 
+                                    }
+                                }
                                 note.game_object.active = false;
-                                if keys == 0 {
-                                    self.key_left.state = 2
-                                } else if keys == 1 {
-                                    self.key_up.state = 2
-                                } else if keys == 2 {
-                                    self.key_bottom.state = 2
-                                } else if keys == 3 {
-                                    self.key_right.state = 2
+                                match keys {
+                                    0 => self.key_left.state = 2,
+                                    1 => self.key_up.state = 2,
+                                    2 => self.key_bottom.state = 2,
+                                    3 => self.key_right.state = 2,
+                                    _ => {}
                                 }
                             }
                         }
                     }
                 }
             }
-        } else {
         }
     }
 

@@ -193,13 +193,13 @@ impl GameLogic {
                     match &self.selected_object {
                         Some(selected) => {
                             if selected.flag == "Left" {
-                                self.keys[0][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 160) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None);
+                                self.keys[0][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 160) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None, false);
                             } else if selected.flag == "Up" {
-                                self.keys[1][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 60) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None);
+                                self.keys[1][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 60) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None, false);
                             } else if selected.flag == "Bottom" {
-                                self.keys[2][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 40) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None);
+                                self.keys[2][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 40) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None, false);
                             } else if selected.flag == "Right" {
-                                self.keys[3][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 140) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None);
+                                self.keys[3][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 140) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None, false);
                             }
                             self.selected_object = None;
                         },
@@ -343,13 +343,13 @@ impl GameLogic {
 
                         if self.add_key {
                             if i == 0 {
-                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 175) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Left".to_owned()), None);
+                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 175) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Left".to_owned()), None, false);
                             } else if i == 1 {
-                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Up".to_owned()), None);
+                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Up".to_owned()), None, false);
                             } else if i == 2 {
-                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 25) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Bottom".to_owned()), None);
+                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 25) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Bottom".to_owned()), None, false);
                             } else if i == 3 {
-                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 125) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Right".to_owned()), None);
+                                list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 125) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Right".to_owned()), None, false);
                             }
                         }
 

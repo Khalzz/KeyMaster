@@ -63,7 +63,8 @@ pub struct App {
     pub reseted: bool,
     pub testing_song: Option<Testing>,
     pub calibrate_on_start: bool,
-    pub alert_message: String
+    pub alert_message: String,
+    pub can_edit: bool
 }
 
 impl App {
@@ -101,6 +102,7 @@ impl App {
             testing_song: None,
             calibrate_on_start: true,
             alert_message: String::from(""),
+            can_edit: false
         }
     }
 

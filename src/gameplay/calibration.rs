@@ -17,7 +17,7 @@ use crate::{key::GameKey, app::{self, App, AppState, CoordinationData, GameState
 impl GameLogic {
     // this is called once
     pub fn new(app: &mut App) -> Self {
-        let calibration_note = GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, None, None);
+        let calibration_note = GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, None, None, false);
 
         // UI ELEMENT
         let timer = Button::new(
