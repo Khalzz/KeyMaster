@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 use sdl2::{event::{self, Event}, image::LoadTexture, keyboard::Keycode, mixer::{self, Music}, pixels::Color, render::{Canvas, TextureCreator}, sys::ttf::TTF_FontHeight, ttf::Font, video::{Window, WindowContext}};
-use crate::{app::{App, AppState, GameState, self}, game_object::GameObject, input::button_module::Button, input::keybutton::{KeyButton}, key::GameKey, load_song::Song, UI::{text::Label}};
+use crate::{app::{self, App, AppState, GameState}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::KeyButton}, key::GameKey, load_song::Song, UI::text::Label};
 
 pub struct GameLogic { // here we define the data we use on our script
     error_label: Label,
@@ -19,7 +19,8 @@ impl GameLogic {
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
-            None
+            None,
+            TextAlign::Center
         );
         Self {
             error_label,
@@ -28,9 +29,10 @@ impl GameLogic {
     }
 
     pub fn update(&mut self, _font: &Font, mut app_state: &mut AppState, mut event_pump: &mut sdl2::EventPump, app: &mut App) {
+        let mut texture_creator = app.canvas.texture_creator();
         self.error_label.text = app.alert_message.clone();
-        self.error_label.render(&mut app.canvas, &app.texture_creator, _font);
-        self.ok_button.render(&mut app.canvas, &app.texture_creator, _font);
+        self.error_label.render(&mut app.canvas, &texture_creator, _font);
+        self.ok_button.render(&mut app.canvas, &texture_creator, _font);
 
         Self::event_handler(self, &mut app_state, &mut event_pump, app);
     }

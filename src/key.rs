@@ -1,11 +1,20 @@
 use std::time::Duration;
 
+use sdl2::image::LoadTexture;
 use sdl2::mouse::MouseButton;
+use sdl2::render::Texture;
+use sdl2::sys::SDL_Texture;
 use sdl2::{render::Canvas, video::Window, rect::Rect};
 use sdl2::pixels::Color;
 
+use std::collections::HashMap;
+
+use crate::app::{self, App};
 use crate::game_object::GameObject;
 use crate::input::keybutton;
+
+
+
 
 #[derive(Clone)]
 pub struct GameKey {
@@ -29,14 +38,54 @@ impl GameKey {
             hover: false,
             holding,
             flag,
-            connected
+            connected,
         }
     }
 
-    pub fn render(&self, canvas: &mut Canvas<Window>) {
+    pub fn render(&self, app: &mut App) {
+        let mut note_texture = &app.textures.red_note;
+        let mut hold_texture = &app.textures.red_hold;
+        let mut end_texture = &app.textures.red_note;
+
         if self.game_object.active == true {
-            canvas.set_draw_color(self.color); // it must be a Color::RGB() or other
-            canvas.fill_rect(Rect::new(self.game_object.x as i32, self.game_object.y as i32, self.game_object.width as u32, self.game_object.height as u32)).unwrap();
+            match &self.flag {
+                Some(flag) => {
+                    if flag == "Left" {
+                        note_texture = &app.textures.red_note;
+                        hold_texture = &app.textures.red_hold;
+                    } else if flag == "Up" {
+                        note_texture = &app.textures.yellow_note;
+                        hold_texture = &app.textures.yellow_hold;
+                    } else if flag == "Bottom" {
+                        note_texture = &app.textures.blue_note;
+                        hold_texture = &app.textures.blue_hold;
+                    } else if flag == "Right" {
+                        note_texture = &app.textures.purple_note;
+                        hold_texture = &app.textures.purple_hold;
+                    }
+                },
+                None => {},
+            }
+
+            if self.holding {
+                end_texture = hold_texture;
+            } else {
+                end_texture = note_texture;
+            }
+
+            match end_texture {
+                Some(texture) => {
+                    app.canvas.copy(texture, None, Some(Rect::new(self.game_object.x as i32, self.game_object.y as i32, self.game_object.width as u32, self.game_object.height as u32)));
+                    unsafe {
+                        let raw_texture_ptr = texture as *const sdl2::render::Texture as *mut SDL_Texture;
+                        sdl2::sys::SDL_DestroyTexture(raw_texture_ptr);
+                    }
+                },
+                None => {
+                    app.canvas.set_draw_color(self.color); // it must be a Color::RGB() or other
+                    app.canvas.fill_rect(Rect::new(self.game_object.x as i32, self.game_object.y as i32, self.game_object.width as u32, self.game_object.height as u32)).unwrap();
+                },
+            }
         } else {
             return
         }

@@ -1,8 +1,16 @@
-use sdl2::{render::{Canvas, TextureCreator, TextureQuery}, ttf::Font, video::{Window, WindowContext}, mouse::MouseButton};
+use std::os::raw::c_void;
+
+use sdl2::{mouse::MouseButton, render::{Canvas, TextureCreator, TextureQuery}, sys::SDL_Texture, ttf::Font, video::{Window, WindowContext}};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 
 use crate::game_object::GameObject;
+
+#[derive(Clone)]
+pub enum TextAlign {
+    Left,
+    Center,
+}
 
 #[derive(Clone)]
 
@@ -17,11 +25,13 @@ pub struct Button {
     pub hover: bool,
     pub clicked: bool,
     pub lclicked: bool,
-    pub toggle: Option<bool>
+    pub toggle: Option<bool>,
+    pub text_align: TextAlign
 }
 
 impl Button {
-    pub fn new(game_object: GameObject, text: Option<String>, color: Color, text_color: Color, hover_color: Color, clicked_color: Color, toggle: Option<bool>) -> Self {
+    pub fn new(game_object: GameObject, text: Option<String>, color: Color, text_color: Color, hover_color: Color, clicked_color: Color, toggle: Option<bool>, text_align: TextAlign) -> Self {
+        
         Button {
             game_object,
             text: text,
@@ -33,7 +43,8 @@ impl Button {
             hover: false,
             clicked: false,
             lclicked: false,
-            toggle
+            toggle,
+            text_align
         }
     }
 
@@ -56,16 +67,38 @@ impl Button {
             // Render the button text
             match &self.text {
                 Some(_text) => {
-                    let surface = font.render(&_text).solid(self.text_color).expect("Something went wrong while creating the surface");
-                    let texture = texture_creator.create_texture_from_surface(&surface).expect("Something went wrong while creating the texture");
-        
-                    // We center the text on the button
-                    let TextureQuery { width: text_width, height: text_height, .. } = texture.query();
-                    let text_x = self.game_object.x as i32 + (self.game_object.width as i32 - text_width as i32) / 2;
-                    let text_y = self.game_object.y as i32 + (self.game_object.height as i32 - text_height as i32) / 2;
-        
-                    // render
-                    canvas.copy(&texture, None, Rect::new(text_x, text_y, text_width, text_height)).unwrap();
+                    match font.render(&_text).solid(self.text_color) {
+                        Ok(surface) => {
+                            match texture_creator.create_texture_from_surface(&surface) {
+                                Ok(texture) => {
+                                    let TextureQuery { width: text_width, height: text_height, .. } = texture.query();
+                                    let mut text_x = 0;
+                                    let mut text_y = 0;
+
+                                    match self.text_align {
+                                        TextAlign::Left => {
+                                            text_x = self.game_object.x as i32;
+                                            text_y = self.game_object.y as i32;
+                                        },
+                                        TextAlign::Center => {
+                                            text_x = self.game_object.x as i32 + (self.game_object.width as i32 - text_width as i32) / 2;
+                                            text_y = self.game_object.y as i32 + (self.game_object.height as i32 - text_height as i32) / 2;
+                                        },
+                                    }
+                        
+                                    // render
+                                    canvas.copy(&texture, None, Rect::new(text_x, text_y, text_width, text_height)).unwrap();
+
+                                    unsafe {
+                                        texture.destroy();
+                                    }
+                                },
+                                // if i do a tabulation this dont works good on calibnration
+                                Err(_) => {},
+                            }
+                        },
+                        Err(_) => {},
+                    };
                 },
                 None => {
 

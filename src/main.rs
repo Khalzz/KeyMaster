@@ -1,4 +1,5 @@
-use app::App;
+use app::{App};
+use sdl2::{image::{self, LoadTexture}, render::{Canvas, Texture}, video::Window};
 
 mod app;
 mod key;
@@ -26,8 +27,12 @@ mod gameplay {
     pub mod alert;
 }
 
+
+
+
+
 fn main() -> Result<(), String> {
-    let app = App::new(1920, 1080, "Arrowner");
+    let mut app = App::new("Arrowner");
     app.render();
     Ok(())
 }

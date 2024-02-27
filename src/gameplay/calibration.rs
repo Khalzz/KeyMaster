@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
 use sdl2::{render::Canvas, video::Window, pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
-use crate::{key::GameKey, app::{self, App, AppState, CoordinationData, GameState}, game_object::GameObject, input::keybutton::KeyButton, input::button_module::Button};
+use crate::{app::{self, App, AppState, CoordinationData, GameState}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::KeyButton}, key::GameKey};
 
  pub struct GameLogic { // here we define the data we use on our script
     last_frame: Instant,
@@ -28,12 +28,13 @@ impl GameLogic {
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
-            None
+            None,
+            TextAlign::Center
         );
-        let enter_timer = Button::new(GameObject {active: true, x:(app.width - 40) as f32, y: 35.0, width: 0.0, height: 0.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
-        let out_timer = Button::new(GameObject { active: true, x:(app.width - 40) as f32, y: 60.0, width: 0.0, height: 0.0}, Some(String::from("Timer")), Color::RGB(100, 100, 100),Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0), None);
+        let enter_timer = Button::new(GameObject {active: true, x:(app.width - 40) as f32, y: 35.0, width: 0.0, height: 0.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
+        let out_timer = Button::new(GameObject { active: true, x:(app.width - 40) as f32, y: 60.0, width: 0.0, height: 0.0}, Some(String::from("Timer")), Color::RGB(100, 100, 100),Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0), None, TextAlign::Center);
         // controlers 
-        let key_up = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) - 85) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0}, Color::RGB(200, 50, 100));
+        let key_up = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) - 95) as f32, y: app.height as f32 - 160.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
 
         Self {
             last_frame: Instant::now(),
@@ -50,20 +51,21 @@ impl GameLogic {
 
     // this is called every frame
     pub fn update(&mut self, _font: &Font, mut app_state: &mut AppState, mut event_pump: &mut sdl2::EventPump, app: &mut App) {
+        let mut texture_creator = app.canvas.texture_creator();
         let delta_time = self.delta_time();
 
         // timer
         let elapsed_time = self.start_time.elapsed();
         let milliseconds = elapsed_time.as_millis() / 10;
         self.timer.text = Some(format!("{}", milliseconds));
-        self.timer.render(&mut app.canvas, &app.texture_creator, &_font); 
-        self.enter_timer.render(&mut app.canvas, &app.texture_creator, &_font); 
-        self.out_timer.render(&mut app.canvas, &app.texture_creator, &_font); 
+        self.timer.render(&mut app.canvas, &texture_creator, &_font); 
+        self.enter_timer.render(&mut app.canvas, &texture_creator, &_font); 
+        self.out_timer.render(&mut app.canvas, &texture_creator, &_font); 
 
         // buttons 
         let mut key_buttons = [&self.key_up];
         for button_key in key_buttons.iter_mut() {
-            button_key.render(None, app);
+            button_key.render(app, 0);
         }
 
         Self::handle_notes(&mut self.started, &mut self.enter_timer, &mut self.out_timer, &mut self.calibration_note, milliseconds, delta_time, self.canvas_height, &mut app_state, app);
@@ -86,7 +88,7 @@ impl GameLogic {
     fn handle_notes(started: &mut bool, enter_timer: &mut Button, out_timer: &mut Button, note: &mut GameKey, milliseconds: u128, delta_time: Duration, height: u32, app_state: &mut AppState, app: &mut App) {
         let inside: bool;
         if note.mili < milliseconds {
-            note.render(&mut app.canvas);
+            note.render(app);
             note.update(delta_time, app.coordination_data.key_speed);         
 
             if (note.game_object.y > (height - 210) as f32) && (note.game_object.y < (height - 90) as f32) {

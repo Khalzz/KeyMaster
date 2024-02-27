@@ -6,7 +6,7 @@ use sdl2::rect::Rect;
 
 use crate::{game_object::GameObject, app::{App, self}};
 
-use super::button_module::Button;
+use super::button_module::{Button, TextAlign};
 
 pub struct Slider_input {
     pub game_object: GameObject,
@@ -39,7 +39,8 @@ impl Slider_input {
                     Color::WHITE,
                     Color::RGB(0, 200, 0),
                     Color::RGB(0, 0, 0),
-                    None
+                    None,
+                    TextAlign::Center
                 );
                 texts.push(text)
             },
@@ -54,7 +55,8 @@ impl Slider_input {
                 Color::WHITE,
                 Color::RGB(0, 200, 0),
                 Color::RGB(0, 0, 0),
-                None
+                None,
+                TextAlign::Center
             );
             texts.push(percentage_text)
         }
@@ -82,6 +84,8 @@ impl Slider_input {
     }
 
     pub fn render(&mut self, app: &mut App, _font: &Font) {
+        let texture_creator = app.canvas.texture_creator();
+
         if self.game_object.active == true {
             app.canvas.set_draw_color(self.base_color); // it must be a Color::RGB() or other
             let mut order: Rect;
@@ -99,7 +103,7 @@ impl Slider_input {
             app.canvas.fill_rect(order_inner).unwrap();
 
             for btn in 0..self.texts.len() {
-                self.texts[btn].render(&mut app.canvas, &app.texture_creator, _font)
+                self.texts[btn].render(&mut app.canvas, &texture_creator, _font)
             }
 
             if self.with_percentage == true {
@@ -155,8 +159,8 @@ impl Slider_input {
         }
     }
 
-    pub fn set_percentage(&mut self, value: u128) {
-        self.slider_position = 500;
+    pub fn set_percentage(&mut self, value: i32) {
+        self.slider_position = value;
     }
 
 

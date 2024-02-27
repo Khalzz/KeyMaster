@@ -1,5 +1,5 @@
-use sdl2::{event::Event, mixer, pixels::Color, ttf::Font};
-use crate::{ app::{App, AppState, GameState, self}, game_object::GameObject, input::{button_module::Button, slider_module}, input::slider_module::Slider_input};
+use sdl2::{event::Event, keyboard::Keycode, mixer, pixels::Color, ttf::Font};
+use crate::{ app::{self, App, AppState, GameState}, game_object::GameObject, input::{button_module::{Button, TextAlign}, slider_module::{self, Slider_input}}};
 
 enum MenuSelector {
     Controller,
@@ -28,7 +28,9 @@ impl GameLogic<'_> {
             Color::RGB(100, 100, 100),
             Color::WHITE,
             Color::RGB(0, 200, 0),
-            Color::RGB(0, 0, 0),None
+            Color::RGB(0, 0, 0),
+            None, 
+            TextAlign::Center
         );
         let calibration = Button::new(
             GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: 160.0, width: 100.0, height: 50.0},
@@ -36,7 +38,9 @@ impl GameLogic<'_> {
             Color::RGB(100, 100, 100),
             Color::WHITE,
             Color::RGB(0, 200, 0),
-            Color::RGB(0, 0, 0),None
+            Color::RGB(0, 0, 0),
+            None, 
+            TextAlign::Center
         );
         let slider = Slider_input::new(
             app,
@@ -51,7 +55,7 @@ impl GameLogic<'_> {
             100.0
         );
 
-        let exit = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},Some(String::from("Back")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
+        let exit = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},Some(String::from("Back")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
 
         let btn_list = [controller, calibration, exit];
 
@@ -68,6 +72,8 @@ impl GameLogic<'_> {
 
     // this is called every frame
     pub fn update(&mut self, _font: &Font, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
+        let mut texture_creator = app.canvas.texture_creator();
+
         if self.started == true {
             self.actual_setting = 0;
             self.started = false;
@@ -75,11 +81,10 @@ impl GameLogic<'_> {
 
         self.actual_opt = self.opt_list[self.actual_setting];
         for btn in 0..self.btn_list.len() {
-            self.btn_list[btn].render(&mut app.canvas, &app.texture_creator, _font)
+            self.btn_list[btn].render(&mut app.canvas, &texture_creator, _font)
         }
 
         self.slider.render(app, _font);
-
         Self::event_handler(app_state, event_pump, &mut self.btn_list, &mut self.slider, app);
     }
 
@@ -88,6 +93,9 @@ impl GameLogic<'_> {
             match event { 
                 Event::Quit { .. } => {
                     app_state.is_running = false;
+                },
+                Event::KeyDown { keycode: Some(Keycode::Escape), .. }  => {
+                    app_state.state = GameState::MainMenu;
                 },
                 _ => {}
             }

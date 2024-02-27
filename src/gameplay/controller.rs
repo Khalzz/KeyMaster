@@ -1,6 +1,6 @@
 use std::time::Instant;
 use sdl2::{pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
-use crate::{app::{App, AppState, GameState}, game_object::GameObject, input::button_module::Button};
+use crate::{app::{App, AppState, GameState}, game_object::GameObject, input::button_module::{Button, TextAlign}};
 
 pub struct GameLogic { // here we define the data we use on our script
     pub start_time: Instant,
@@ -11,11 +11,11 @@ pub struct GameLogic { // here we define the data we use on our script
 
 impl GameLogic {
     pub fn new(app: &mut App) -> Self {
-        let key_left = Button::new(GameObject {active: true, x: ((app.width/2) - 185) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Left")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
-        let key_right = Button::new(GameObject {active: true, x: ((app.width/2) + 115) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Right")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
-        let key_up = Button::new(GameObject {active: true,x: ((app.width/2) - 85) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Up")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
-        let key_bottom = Button::new(GameObject {active: true, x: ((app.width/2) + 15) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Down")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
-        let back_button = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},Some(String::from("Back")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
+        let key_left = Button::new(GameObject {active: true, x: ((app.width/2) - 185) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Left")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
+        let key_right = Button::new(GameObject {active: true, x: ((app.width/2) + 115) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Right")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
+        let key_up = Button::new(GameObject {active: true,x: ((app.width/2) - 85) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Up")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
+        let key_bottom = Button::new(GameObject {active: true, x: ((app.width/2) + 15) as f32, y: app.height as f32 - 160.0, width: 70.0, height: 70.0},Some(String::from("Down")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
+        let back_button = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},Some(String::from("Back")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
 
         let key_state = [false, false, false, false];
         let btn_list = vec![key_left, key_up, key_bottom, key_right];
@@ -30,9 +30,11 @@ impl GameLogic {
 
     // this is called every frame
     pub fn update(&mut self, _font: &Font, mut app_state: &mut AppState, mut event_pump: &mut sdl2::EventPump, app: &mut App) {
+        let mut texture_creator = app.canvas.texture_creator();
+
         for btn in 0..self.btn_list.len() {
-            self.btn_list[btn].render(&mut app.canvas, &app.texture_creator, _font);
-            self.back_button.render(&mut app.canvas, &mut app.texture_creator, _font);
+            self.btn_list[btn].render(&mut app.canvas, &texture_creator, _font);
+            self.back_button.render(&mut app.canvas, &mut texture_creator, _font);
                 if self.key_state[btn] {
                     self.btn_list[btn].text = Some(String::from("..."));
                 } else {

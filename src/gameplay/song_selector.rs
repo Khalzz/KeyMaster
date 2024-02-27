@@ -1,7 +1,7 @@
 use std::{fs, ffi::OsString};
 
 use sdl2::{render::{Canvas, TextureCreator}, video::{Window, WindowContext}, pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
-use crate::{ app::{App, AppState, GameState, self}, game_object::GameObject, input::button_module::Button};
+use crate::{ app::{self, App, AppState, GameState}, game_object::GameObject, input::button_module::{Button, TextAlign}};
 
 enum MenuSelector {
     Play,
@@ -32,7 +32,8 @@ impl GameLogic<> {
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
-            None
+            None,
+            TextAlign::Center
         );
 
         Self {
@@ -43,14 +44,16 @@ impl GameLogic<> {
 
     // this is called every frame
     pub fn update(&mut self, _font: &Font, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
+        let texture_creator = app.canvas.texture_creator();
         for btn in 0..self.btn_list.len() {
-            self.btn_list[btn].render(&mut app.canvas, &app.texture_creator, _font);
+            self.btn_list[btn].render(&mut app.canvas, &texture_creator, _font);
         }
 
         Self::event_handler(self,app_state, event_pump,  _font, app);
     }
 
     fn event_handler(&mut self, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, _font: &Font, app: &mut App) {
+        let mut texture_creator = app.canvas.texture_creator();
         for event in event_pump.poll_iter() {
             match event { 
                 Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. }  => {
@@ -64,7 +67,7 @@ impl GameLogic<> {
                         app_state.state = GameState::MainMenu;
                     } else {
                         // add here a reset for the play
-                        self.loading(&mut app.texture_creator, _font, &mut app.canvas);
+                        self.loading(&mut texture_creator, _font, &mut app.canvas);
                         match &self.btn_list[btn].text {
                             Some(_text) => {
                                 app_state.song_folder = Some(_text.clone());
@@ -99,7 +102,7 @@ impl GameLogic<> {
         let mut songs_buttons: Vec<Button> = vec![];
         let mut position = 50.0;
 
-        let back_button = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},Some(String::from("Back")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
+        let back_button = Button::new(GameObject {active: true, x: 10.0 as f32, y: 10.0, width: 70.0, height: 30.0},Some(String::from("Back")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None,TextAlign::Center);
         songs_buttons.push(back_button);
 
         for entry in folders {
@@ -118,7 +121,8 @@ impl GameLogic<> {
                         Color::WHITE,
                         Color::RGB(0, 200, 0),
                         Color::RGB(0, 0, 0),
-                        None
+                        None,
+                        TextAlign::Center
                     ));
                     position += 60.0;
                 }

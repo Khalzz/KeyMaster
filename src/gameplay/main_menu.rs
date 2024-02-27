@@ -1,5 +1,5 @@
 use sdl2::{render::{Canvas, TextureCreator}, video::{Window, WindowContext}, pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
-use crate::{ app::{App, AppState, GameState}, game_object::GameObject, input::button_module::Button, UI::text::Label};
+use crate::{ app::{App, AppState, GameState}, game_object::GameObject, input::button_module::{Button, TextAlign}, UI::text::Label};
 
 enum MenuSelector {
     Play,
@@ -28,7 +28,8 @@ impl GameLogic<'_> {
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
-            None
+            None,
+            TextAlign::Center
         );
         let settings = Button::new(
             GameObject {
@@ -38,7 +39,8 @@ impl GameLogic<'_> {
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
-            None
+            None, 
+            TextAlign::Center
         );
         let exit = Button::new(
             GameObject {
@@ -48,7 +50,8 @@ impl GameLogic<'_> {
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
-            None
+            None,
+            TextAlign::Center
         );
 
         let btn_list = [play, settings, exit];
@@ -62,9 +65,11 @@ impl GameLogic<'_> {
     }
 
     pub fn update(&mut self, _font: &Font, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
+        let mut texture_creator = app.canvas.texture_creator();
+
         // rendering buttons
         for btn in 0..self.btn_list.len() {
-            self.btn_list[btn].render(&mut app.canvas, &app.texture_creator, _font);
+            self.btn_list[btn].render(&mut app.canvas, &texture_creator, _font);
         }
 
         // input reading and sending stuff to the canvas

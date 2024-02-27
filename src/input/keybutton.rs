@@ -2,10 +2,13 @@ use sdl2::image::LoadTexture;
 use sdl2::keyboard::Keycode;
 use sdl2::rect::Rect;
 use sdl2::pixels::Color;
+use sdl2::render::Texture;
+use sdl2::sys::SDL_Texture;
 use serde::{Deserialize, Serialize};
 use serde_json;
 use std::fs;
 use std::time::Instant;
+use rand::Rng;
 
 use crate::app::App;
 use crate::game_object::GameObject;
@@ -36,7 +39,6 @@ pub struct KeyButton {
 impl KeyButton {
     pub fn new(app: &mut App, game_object: GameObject, color: Color) -> KeyButton {
         // add here the texture initialization
-        let image = app.texture_creator.load_texture("assets/sprites/WhiteKey-Sheet.png");
         let image_array = generate_sprite_array(1, 3, 32, 32);
 
         KeyButton {
@@ -51,17 +53,32 @@ impl KeyButton {
             image_array,
             state: 0,
             timer: Instant::now(),
-            pressed_time: 0
+            pressed_time: 0,
         }
     }
 
-    pub fn render(&self, image: Option<&str>, app: &mut App) {
-        match image {
-            Some(image) => {
+    pub fn render(&self, app: &mut App, flag: usize) {
+        let mut texture = &app.textures.red_key;
+
+        if flag == 0 {
+            texture = &app.textures.red_key
+        } else if flag == 1 {
+            texture = &app.textures.yellow_key
+        } else if flag == 2 {
+            texture = &app.textures.purple_key
+        } else if flag == 3 {
+            texture = &app.textures.blue_key
+        }
+
+        match &texture {
+            Some(texture) => {
                 if self.game_object.active == true {
-                    let image_texture = app.texture_creator.load_texture("assets/sprites/WhiteKey-Sheet.png").expect("Failed to load image texture");
-                    app.canvas.copy(&image_texture, self.image_array[self.state], Some(Rect::new(self.game_object.x as i32, self.game_object.y as i32, self.game_object.width as u32, self.game_object.height as u32)))
+                    app.canvas.copy(texture, self.image_array[self.state], Some(Rect::new(self.game_object.x as i32, self.game_object.y as i32, self.game_object.width as u32, self.game_object.height as u32)))
                     .expect("Failed to copy texture into canvas");
+                    unsafe {
+                        let raw_texture_ptr = texture as *const sdl2::render::Texture as *mut SDL_Texture;
+                        sdl2::sys::SDL_DestroyTexture(raw_texture_ptr);
+                    }
                 } else {
                     return
                 }
@@ -71,7 +88,7 @@ impl KeyButton {
                     app.canvas.set_draw_color(self.color); // it must be a Color::RGB() or other
                     app.canvas.fill_rect(Rect::new(self.game_object.x as i32, self.game_object.y as i32, self.game_object.width as u32, self.game_object.height as u32)).unwrap();
                 } else {
-                    return
+                    
                 }
             },
         }
@@ -82,7 +99,6 @@ impl KeyButton {
             match event {
                 sdl2::event::Event::KeyDown { keycode: Some(key_value), .. } if *key_value == key => {
                     if self.repeat == true {
-
                         // song generation
                         self.timer = Instant::now();
                         self.pressed_time = milliseconds;
@@ -119,6 +135,11 @@ impl KeyButton {
                 // song generation (saving)
                 sdl2::event::Event::KeyDown { keycode: Some(Keycode::S), .. } => {
                     song.end = milliseconds;
+
+                    let mut rng = rand::thread_rng();
+                    let random_number: i128 = rng.gen();
+
+                    song.id = Some(random_number);
 
                     if key == play_keys[0] {
                         song.left_keys = self.left_keys.clone();

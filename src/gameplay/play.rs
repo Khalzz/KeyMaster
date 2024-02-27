@@ -1,6 +1,6 @@
-use std::time::{Duration, Instant};
-use sdl2::{pixels::Color, ttf::Font, event::Event, keyboard::Keycode, mixer::{self, Music}};
-use crate::{app::{App, AppState, GameState}, game_object::GameObject, input::{button_module::Button, keybutton::KeyButton}, key::GameKey, load_song::Song};
+use std::{collections::HashMap, time::{Duration, Instant}};
+use sdl2::{event::Event, image::LoadTexture, keyboard::Keycode, mixer::{self, Music}, pixels::Color, rect::Rect, render::{Canvas, Texture}, ttf::Font, video::Window};
+use crate::{app::{App, AppState, GameState}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::KeyButton}, key::GameKey, load_song::Song};
 
 pub struct KeyState {
     pub left: bool,
@@ -30,8 +30,12 @@ pub struct GameLogic<'a> { // here we define the data we use on our script
     error: bool,
     error_elements: Vec<Button>,
     song_end: u128,
-    end: bool
+    end: bool,
+    frame_count: u32,
+    frame_timer: Duration,
+    fps: u32,
 } 
+
 
 impl GameLogic<'_> {
     // this is called once
@@ -62,6 +66,7 @@ impl GameLogic<'_> {
                     None => {
                         let mut song_game: Song = Song {
                             name: String::from(""),
+                            id: Some(0),
                             left_keys: vec![],
                             up_keys: vec![],
                             bottom_keys: vec![],
@@ -92,25 +97,25 @@ impl GameLogic<'_> {
         }
 
         // UI ELEMENT
-        let ui_points = Button::new(GameObject { active: true, x:((app.width/2) - 70 ) as f32, y: 10.0, width: 140.0, height: 30.0}, Some(String::from("Points")),Color::RGB(200, 100, 100), Color::WHITE, Color::RGB(200, 10, 0), Color::RGB(200, 0, 0),None);
-
-        let timer = Button::new(GameObject {active: true, x:(app.width - 40) as f32, y: 30.0, width: 0.0, height: 0.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
+        let ui_points = Button::new(GameObject { active: true, x:((app.width/2) - 70 ) as f32, y: 10.0, width: 140.0, height: 30.0}, Some(String::from("Points")),Color::RGB(200, 100, 100), Color::WHITE, Color::RGB(200, 10, 0), Color::RGB(200, 0, 0),None, TextAlign::Center);
+        let timer = Button::new(GameObject {active: true, x:10 as f32, y: 30.0, width: 0.0, height: 0.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Left);
+        let framerate = Button::new(GameObject {active: true, x:10 as f32, y: 10.0, width: 0.0, height: 0.0},Some(String::from("Framerate")),Color::RGBA(100, 100, 100, 0),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Left);
 
         // PAUSE UI
-        let pause_text = Button::new(GameObject {active: true, x: 0.0, y: 0.0, width: app.width as f32, height: app.height as f32},Some(String::from("Pause")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
-        let resume = Button::new(GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height - (app.height / 2) + 50) as f32, width: 100.0, height: 50.0},Some(String::from("resume")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
-        let exit = Button::new(GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height - (app.height / 2) + 110) as f32, width: 100.0, height: 50.0},Some(String::from("exit")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
+        let pause_text = Button::new(GameObject {active: true, x: 0.0, y: 0.0, width: app.width as f32, height: app.height as f32},Some(String::from("Pause")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None, TextAlign::Center);
+        let resume = Button::new(GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height - (app.height / 2) + 50) as f32, width: 100.0, height: 50.0},Some(String::from("resume")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None, TextAlign::Center);
+        let exit = Button::new(GameObject {active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height - (app.height / 2) + 110) as f32, width: 100.0, height: 50.0},Some(String::from("exit")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None, TextAlign::Center);
 
         // Error UI
-        let error_text = Button::new(GameObject {active: true, x: 0.0, y: 0.0, width: app.width as f32, height: app.height as f32},Some(app.alert_message.clone()),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
-        let ok_button = Button::new(GameObject { active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height as f32/2.0) + 200.0 as f32, width: 100.0, height: 50.0},Some(String::from("OK")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None);
+        let error_text = Button::new(GameObject {active: true, x: 0.0, y: 0.0, width: app.width as f32, height: app.height as f32},Some(app.alert_message.clone()),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None, TextAlign::Center);
+        let ok_button = Button::new(GameObject { active: true, x:((app.width/2) - (100/2)) as f32, y: (app.height as f32/2.0) + 200.0 as f32, width: 100.0, height: 50.0},Some(String::from("OK")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
 
         // End UI
-        let end_text = Button::new(GameObject {active: true, x: 0.0, y: 0.0, width: app.width as f32, height: app.height as f32},Some(String::from("Congrats!!!")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
-        let back_to_menu = Button::new(GameObject {active: true, x:((app.width/2) - (160/2)) as f32, y: (app.height - (app.height / 2) + 50) as f32, width: 160.0, height: 50.0},Some(String::from("Back to menu")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None);
+        let end_text = Button::new(GameObject {active: true, x: 0.0, y: 0.0, width: app.width as f32, height: app.height as f32},Some(String::from("Congrats!!!")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None, TextAlign::Center);
+        let back_to_menu = Button::new(GameObject {active: true, x:((app.width/2) - (160/2)) as f32, y: (app.height - (app.height / 2) + 50) as f32, width: 160.0, height: 50.0},Some(String::from("Back to menu")),Color::RGBA(0, 0, 0, 200),Color::WHITE,Color::RGBA(0, 200, 0,0),Color::RGBA(0, 0, 0,0),None, TextAlign::Center);
 
         // UI LISTS
-        let ui_elements = vec![ui_points, timer];
+        let ui_elements = vec![ui_points, timer, framerate];
         let pause_elements = vec![pause_text, resume, exit];
         let end_elements = vec![end_text, back_to_menu];
         let error_elements = vec![error_text, ok_button];
@@ -121,6 +126,8 @@ impl GameLogic<'_> {
         let key_bottom = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) + 5) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
         let key_right = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) + 105) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
 
+        // hold textures
+        
         // buttons
         let key_state = KeyState { left: false, top: false, bottom: false, right: false};
 
@@ -134,7 +141,7 @@ impl GameLogic<'_> {
             key_state,
             song_keys,
             canvas_height: app.height,
-            maked_song: Song { name: "Test".to_owned(), left_keys: vec![], up_keys: vec!(), bottom_keys: vec![], right_keys: vec![], end: 0 },
+            maked_song: Song { name: "Test".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec!(), bottom_keys: vec![], right_keys: vec![], end: 0 },
             started_song: true,
             song,
             points: 0,
@@ -145,45 +152,59 @@ impl GameLogic<'_> {
             error,
             error_elements,
             song_end,
-            end: false
+            end: false,
+            frame_count: 0,
+            frame_timer: Duration::new(0, 0),
+            fps: 0,
         }
     }
 
     // this is called every frame
     pub fn update(&mut self, _font: &Font, mut app_state: &mut AppState, mut event_pump: &mut sdl2::EventPump, app: &mut App) {
+        let mut texture_creator = app.canvas.texture_creator();
         match app_state.song_folder {
             Some(_) => {
-                let delta_time = self.delta_time(); // we use "delta time" on everything that moves on this update
-
-                // timer
+                let delta_time = self.delta_time();
                 let elapsed_time = self.start_time.elapsed() - self.paused_time;
                 let mut milliseconds = 0;
                 
-                if app.paused && !self.end{
+                if app.paused && !self.end{ // pause state
                     milliseconds = 0;
                     if self.error == true{
                         for button in &self.error_elements {
-                            button.render(&mut app.canvas, &app.texture_creator, &_font);
+                            button.render(&mut app.canvas, &texture_creator, &_font);
                         }
                     } else {
                         app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
                         app.canvas.clear();
                         for button in &self.pause_elements {
-                            button.render(&mut app.canvas, &app.texture_creator, &_font);
+                            button.render(&mut app.canvas, &texture_creator, &_font);
                         }
                     }
                 } else {
-                    if self.end == true {
+                    if self.end == true { // end state
                         app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
                         app.canvas.clear();
+
+                        // i have to make sure so i can load the points of the player in a json
+                            // first i have to check if the song haves an id that is not 0
+                                // if id == 0 
+                                    // 1. create id
+                                    // 2. add it to the song
+                                // then we take the id created and check if the id exists in the json of points
+                                    // if it exists we change teh value of points
+                                    // if not we add the new id and the points
+                        
                         self.end_elements[0].text = Some("Congrats, you got ".to_owned() + &self.points.to_string().to_owned() + " points");
                         for button in &self.end_elements {
-                            button.render(&mut app.canvas, &app.texture_creator, &_font);
+                            button.render(&mut app.canvas, &texture_creator, &_font);
                         }
-                    } else {
-                        // clearing
-                        app.canvas.set_draw_color(Color::RGBA(29, 91, 88, 100));
+                    } else { // play state
+                        app.canvas.set_draw_color(Color::RGBA(40, 40, 40, 100));
                         app.canvas.clear();
+
+                        self.display_framerate(&mut app.canvas, &_font, delta_time);
+
 
                         match &app.testing_song {
                             Some(_song) => {
@@ -195,8 +216,8 @@ impl GameLogic<'_> {
                         }
 
                         let mut key_buttons = [&self.key_left, &self.key_up, &self.key_right, &self.key_bottom];
-                        for button_key in key_buttons.iter_mut() {
-                            button_key.render(Some("assets/sprites/WhiteKey-Sheet.png"), app);
+                        for (i, button_key) in key_buttons.iter_mut().enumerate() {
+                            button_key.render(app, i);
                         }
 
                         match self.song_keys {
@@ -207,11 +228,10 @@ impl GameLogic<'_> {
                         self.ui_elements[0].text = Some(self.points.to_string()); // point text
                         self.ui_elements[1].text = Some(format!("{}", milliseconds)); // timer
 
-                            for button in &self.ui_elements {
-                                button.render(&mut app.canvas, &app.texture_creator, &_font);
-                            }
+                        for button in &self.ui_elements {
+                            button.render(&mut app.canvas, &texture_creator, &_font);
+                        }
                         
-
                         // audio loading and playing
                         if milliseconds >= 300 && self.started_song == true {
                             match app_state.state {
@@ -240,15 +260,13 @@ impl GameLogic<'_> {
                                 _ => {}
                             }
                         }
+
                     }
-
                 } 
-
                 Self::event_handler(self, milliseconds, &mut app_state, &mut event_pump, app);
             },
             None => {},
         }
-        
     }
 
     fn event_handler(&mut self, milliseconds: u128,app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
@@ -268,8 +286,6 @@ impl GameLogic<'_> {
                             }
                         },
                     }
-                },Event::KeyDown { keycode: Some(Keycode::R), .. }  => {
-                    // mixer::Music::set_pos(10.0);
                 }, Event::Quit { .. } => {
                     app_state.is_running = false;
                 } 
@@ -298,6 +314,22 @@ impl GameLogic<'_> {
             self.key_state.bottom = self.key_bottom.update(&mut self.maked_song,milliseconds,&event, app.play_keys[2],&mut app.play_keys);
             self.key_state.right = self.key_right.update(&mut self.maked_song,milliseconds,&event, app.play_keys[3],&mut app.play_keys);
         }
+    }
+
+    fn display_framerate(&mut self, canvas: &mut Canvas<Window>, font: &Font, delta_time: Duration) {
+        self.frame_count += 1;
+        self.frame_timer += delta_time;
+
+        // Calculate FPS every second
+        if self.frame_timer >= Duration::from_secs(1) {
+            self.fps = self.frame_count;
+            self.frame_count = 0;
+            self.frame_timer -= Duration::from_secs(1); // Remove one second from the timer
+        }
+
+        // Render FPS text
+        let fps_text = format!("FPS: {}", self.fps);
+        self.ui_elements[2].text = Some(fps_text);
     }
 
     fn pause(app: &mut App) {
@@ -339,7 +371,7 @@ impl GameLogic<'_> {
                     }
 
                     if note.mili < milliseconds {
-                        note.render(&mut app.canvas);
+                        note.render(app);
                         note.update(delta_time, app.coordination_data.key_speed);
     
                         if actual_key.is_some() {

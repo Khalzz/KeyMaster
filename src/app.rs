@@ -1,11 +1,16 @@
 
+use std::thread::current;
 use std::time::Instant;
 
+use sdl2::image::LoadTexture;
 use sdl2::mixer::{DEFAULT_CHANNELS, AUDIO_S16LSB, DEFAULT_FORMAT, InitFlag, self, DEFAULT_FREQUENCY, Sdl2MixerContext};
 use sdl2::pixels::Color;
-use sdl2::render::{BlendMode, TextureCreator};
+use sdl2::render::{BlendMode, Texture, TextureCreator};
+use sdl2::surface::Surface;
 use sdl2::video::WindowContext;
 use sdl2::{video::Window, Sdl, render::Canvas, sys::KeyCode, keyboard::Keycode};
+use std::collections::HashMap;
+use lazy_static::lazy_static;
 
 use crate::gameplay::play;
 use crate::gameplay::editor;
@@ -14,7 +19,6 @@ use crate::gameplay::settings;
 use crate::gameplay::song_selector;
 use crate::gameplay::controller;
 use crate::gameplay::calibration;
-use crate::gameplay::alert;
 use crate::load_song::Song;
 
 // in this file we will have the main work flow of our app, as a struct defined mainly to do what we want to do:
@@ -47,6 +51,21 @@ pub struct Testing {
     pub start_point: f64
 }
 
+pub struct Textures {
+    pub red_key: Option<Texture>,
+    pub yellow_key: Option<Texture>,
+    pub purple_key: Option<Texture>,
+    pub blue_key: Option<Texture>,
+    pub red_note: Option<Texture>,
+    pub yellow_note: Option<Texture>,
+    pub purple_note: Option<Texture>,
+    pub blue_note: Option<Texture>,
+    pub red_hold: Option<Texture>,
+    pub yellow_hold: Option<Texture>,
+    pub purple_hold: Option<Texture>,
+    pub blue_hold: Option<Texture>,
+}
+
 pub struct App {
     pub context: Sdl,
     pub mixer_context: (),  
@@ -55,7 +74,6 @@ pub struct App {
     pub canvas: Canvas<Window>,
     pub coordination_data: CoordinationData,
     pub play_keys: [Keycode; 4],
-    pub texture_creator: TextureCreator<WindowContext>,
     pub volume_percentage: i32,
     pub paused: bool,
     pub start_pause: Instant,
@@ -64,11 +82,13 @@ pub struct App {
     pub testing_song: Option<Testing>,
     pub calibrate_on_start: bool,
     pub alert_message: String,
-    pub can_edit: bool
+    pub can_edit: bool,
+    pub texture_creator: TextureCreator<WindowContext>,
+    pub textures: Textures
 }
 
 impl App {
-    pub fn new(width: u32, height: u32,  title: &str) -> App{
+    pub fn new(title: &str) -> App{
         // base sdl2
         let context = sdl2::init().expect("SDL2 wasn't initialized");
         let video_susbsystem = context.video().expect("The Video subsystem wasn't initialized");
@@ -77,23 +97,41 @@ impl App {
         mixer::init(InitFlag::FLAC | InitFlag::MOD | InitFlag::MP3 | InitFlag::OGG).expect("Failed to initialize SDL2_mixer");
         let mixer_context = mixer::open_audio(44100, AUDIO_S16LSB, DEFAULT_CHANNELS, 1024).expect("Failed to open audio device");
         mixer::allocate_channels(DEFAULT_CHANNELS);
+        let current_display = video_susbsystem.current_display_mode(0).unwrap();
 
-        let window = video_susbsystem.window(title, width, height).opengl().fullscreen_desktop().build().expect("The window wasn't created");
+        let width = current_display.w as u32;
+        let height = current_display.h as u32;
+
+        let window = video_susbsystem.window(title, width, height as u32).opengl().fullscreen().build().expect("The window wasn't created");
         let mut canvas = window.into_canvas().build().expect("the canvas wasn't builded");
 
         canvas.set_blend_mode(sdl2::render::BlendMode::Blend);
-
         let texture_creator = canvas.texture_creator();
+
+        let textures = Textures { 
+            red_key: texture_creator.load_texture("assets/sprites/RedKey-Sheet.png").ok(),
+            yellow_key: texture_creator.load_texture("assets/sprites/YellowKey-Sheet.png").ok(),
+            purple_key: texture_creator.load_texture("assets/sprites/PurpleKey-Sheet.png").ok(), 
+            blue_key: texture_creator.load_texture("assets/sprites/BlueKey-Sheet.png").ok(), 
+            red_note: texture_creator.load_texture("assets/sprites/notes/RedNote.png").ok(), 
+            yellow_note: texture_creator.load_texture("assets/sprites/notes/YellowNote.png").ok(), 
+            purple_note: texture_creator.load_texture("assets/sprites/notes/PurpleNote.png").ok(), 
+            blue_note: texture_creator.load_texture("assets/sprites/notes/BlueNote.png").ok(), 
+            red_hold: texture_creator.load_texture("assets/sprites/hold/RedHold.png").ok(), 
+            yellow_hold: texture_creator.load_texture("assets/sprites/hold/YellowHold.png").ok(), 
+            purple_hold: texture_creator.load_texture("assets/sprites/hold/PurpleHold.png").ok(), 
+            blue_hold: texture_creator.load_texture("assets/sprites/hold/BlueHold.png").ok() 
+        };
+        // Self::load_textures(&texture_creator);
         
-        return App {
+        App {
             context,
             mixer_context,
             width,
             height,
-            canvas: canvas,
+            canvas,
             coordination_data: CoordinationData { base_time: 0, end_time: 0, key_speed: 700.0, saved_key_speed: 700.0},
             play_keys: [Keycode::D, Keycode::F, Keycode::J, Keycode::K],
-            texture_creator,
             volume_percentage: 15,
             paused: false,
             start_pause: Instant::now(),
@@ -102,7 +140,9 @@ impl App {
             testing_song: None,
             calibrate_on_start: true,
             alert_message: String::from(""),
-            can_edit: false
+            can_edit: false,
+            texture_creator,
+            textures
         }
     }
 
