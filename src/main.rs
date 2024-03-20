@@ -25,14 +25,11 @@ mod gameplay {
     pub mod settings;
     pub mod controller;
     pub mod alert;
+    pub mod manual_calibration;
 }
 
-
-
-
-
 fn main() -> Result<(), String> {
-    let mut app = App::new("Arrowner");
+    let app = App::new("Arrowner");
     app.render();
     Ok(())
 }

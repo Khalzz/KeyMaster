@@ -13,23 +13,29 @@ use crate::app::{self, App};
 use crate::game_object::GameObject;
 use crate::input::keybutton;
 
+#[derive(Clone, Copy)]
+pub enum KeyFlag {
+    Left,
+    Up,
+    Bottom,
+    Right
+}
 
-
-
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct GameKey {
     pub game_object: GameObject,
     pub color: Color,
     pub speed: f32,
-    pub mili: u128,
+    pub mili: i128,
     pub hover: bool,
     pub holding: bool,
-    pub flag: Option<String>,
+    pub flag: Option<KeyFlag>,
     pub connected: Option<u128>,
+    pub muted: bool,
 }
 
 impl GameKey {
-    pub fn new(game_object: GameObject, color: Color, speed: f32, mili: u128, flag: Option<String>, connected: Option<u128>, holding: bool) -> GameKey {
+    pub fn new(game_object: GameObject, color: Color, speed: f32, mili: i128, flag: Option<KeyFlag>, connected: Option<u128>, holding: bool) -> GameKey {
         GameKey {
             game_object,
             color: color,
@@ -39,6 +45,7 @@ impl GameKey {
             holding,
             flag,
             connected,
+            muted: false,
         }
     }
 
@@ -50,27 +57,39 @@ impl GameKey {
         if self.game_object.active == true {
             match &self.flag {
                 Some(flag) => {
-                    if flag == "Left" {
-                        note_texture = &app.textures.red_note;
-                        hold_texture = &app.textures.red_hold;
-                    } else if flag == "Up" {
-                        note_texture = &app.textures.yellow_note;
-                        hold_texture = &app.textures.yellow_hold;
-                    } else if flag == "Bottom" {
-                        note_texture = &app.textures.blue_note;
-                        hold_texture = &app.textures.blue_hold;
-                    } else if flag == "Right" {
-                        note_texture = &app.textures.purple_note;
-                        hold_texture = &app.textures.purple_hold;
+                    match flag {
+                        KeyFlag::Left => {
+                            note_texture = &app.textures.red_note;
+                            hold_texture = &app.textures.red_hold;
+                        },
+                        KeyFlag::Up => {
+                            note_texture = &app.textures.yellow_note;
+                            hold_texture = &app.textures.yellow_hold;
+                        },
+                        KeyFlag::Bottom => {
+                            note_texture = &app.textures.blue_note;
+                            hold_texture = &app.textures.blue_hold;
+                        },
+                        KeyFlag::Right => {
+                            note_texture = &app.textures.purple_note;
+                            hold_texture = &app.textures.purple_hold;
+                        },
+                    }
+                    
+                    if self.muted {
+                        note_texture = &app.textures.mute_note;
+                        hold_texture = &app.textures.mute_hold;
+                    }
+
+                    if self.holding {
+                        end_texture = hold_texture;
+                    } else {
+                        end_texture = note_texture;
                     }
                 },
-                None => {},
-            }
-
-            if self.holding {
-                end_texture = hold_texture;
-            } else {
-                end_texture = note_texture;
+                None => {
+                    end_texture = &None;
+                },
             }
 
             match end_texture {

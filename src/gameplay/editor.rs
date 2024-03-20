@@ -1,17 +1,15 @@
-use std::{time::{Duration, Instant}, fs};
-use sdl2::{render::{Canvas, TextureCreator}, video::{Window, WindowContext}, pixels::Color, ttf::Font, event::Event, keyboard::Keycode, image::LoadTexture, mixer::{self, Music}, mouse::MouseWheelDirection};
-use crate::{app::{self, App, AppState, GameState, Testing}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::{KeyButton, Note}, slider_module::Slider_input}, key::GameKey, load_song::Song};
+use std::fs;
+use sdl2::{pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
+use crate::{app::{App, AppState, GameState, Testing}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::{KeyButton, Note}, slider_module::Slider_input}, key::{GameKey, KeyFlag}, load_song::Song};
 
-pub struct KeyState {
-    pub left: bool,
-    pub top: bool,
-    pub bottom: bool,
-    pub right: bool
+pub struct AddHolding {
+    pub can_add: bool,
+    pub add: bool
 }
 
-pub struct selected {
+pub struct Selected {
     key: usize,
-    flag: String
+    flag: KeyFlag
 }
 
 pub struct GameLogic { // here we define the data we use on our script
@@ -25,10 +23,11 @@ pub struct GameLogic { // here we define the data we use on our script
     ctrl: bool,
     note_spaces_mod: f32,
     index_range: u64,
-    selected_object: Option<selected>,
+    selected_object: Option<Selected>,
     buttons: Vec<Button>,
     changing_start: bool,
     add_key: bool,
+    add_holding: AddHolding,
     start_point:  f64,
     scroll_slider: Slider_input,
     error: bool,
@@ -46,7 +45,7 @@ impl GameLogic {
             bottom_keys: vec![],
             right_keys: vec![],
             end: 0,
-            
+            sync: Some(0)
         };
 
         let start_index = 0;
@@ -93,8 +92,9 @@ impl GameLogic {
         let play = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 60.0, width: 100.0, height: 40.0}, Some(String::from("play")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None, TextAlign::Center);
         
         let add_single_key = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 130.0, width: 100.0, height: 40.0}, Some(String::from("Add key")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None, TextAlign::Center);
-        let add_testing_start = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 180.0, width: 100.0, height: 40.0}, Some(String::from("Add start")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None, TextAlign::Center);
-        let time_position = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 230.0, width: 100.0, height: 40.0}, Some(String::from("000")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None, TextAlign::Center);
+        let add_holding_key = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 180.0, width: 100.0, height: 40.0}, Some(String::from("Add Hold")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None, TextAlign::Center);
+        let time_position = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 300.0, width: 100.0, height: 40.0}, Some(String::from("000")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None, TextAlign::Center);
+        let add_testing_start = Button::new(GameObject { active: true, x:(app.width - 110) as f32, y: 230.0, width: 100.0, height: 40.0}, Some(String::from("Add start")), Color::RGB(100, 100, 100), Color::WHITE, Color::RGB(0, 100, 0), Color::RGB(0, 0, 0),None, TextAlign::Center);
 
         // controlers 
         let key_left = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) - 195) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0},Color::RGB(200, 50, 100));
@@ -115,9 +115,10 @@ impl GameLogic {
             note_spaces_mod: 5.0,
             index_range: 200,
             selected_object: None,
-            buttons: vec![save, play, add_single_key, add_testing_start, time_position],
+            buttons: vec![save, play, add_single_key, add_holding_key, add_testing_start, time_position],
             changing_start: false,
             add_key: false,
+            add_holding: AddHolding { can_add: false, add: false },
             start_point: 300.0,
             scroll_slider,
             error,
@@ -127,13 +128,11 @@ impl GameLogic {
 
     // this is called every frame
     pub fn update(&mut self, _font: &Font, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
-        let mut texture_creator = app.canvas.texture_creator();
+        let texture_creator = app.canvas.texture_creator();
 
         self.buttons[4].text = Some(self.start_index.to_string());
         match app_state.song_folder {
             Some(_) => {
-                
-
                 if self.error {
                     app.reseted = false;
                     app_state.state = GameState::Playing;
@@ -148,11 +147,9 @@ impl GameLogic {
                     for list in &mut self.keys {
                         let mut note_spaces = 0.0;
                         let temp_list = self.start_index as usize ..(self.start_index as usize + self.index_range as usize);
-                        
                         if self.start_index < self.end - self.index_range as u128 {
                             for key in temp_list.into_iter() {
                                 note_spaces += 0.70 * self.note_spaces_mod; 
-
                                 match &self.selected_object {
                                     Some(selected) => {
                                         if key == selected.key {
@@ -186,7 +183,6 @@ impl GameLogic {
     }
 
     fn event_handler(&mut self, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
-    
         for event in event_pump.poll_iter() {
             match event {
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
@@ -202,32 +198,40 @@ impl GameLogic {
                 Event::KeyDown { keycode: Some(Keycode::Delete), .. } => {                    
                     match &self.selected_object {
                         Some(selected) => {
-                            if selected.flag == "Left" {
-                                self.keys[0][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 160) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None, false);
-                            } else if selected.flag == "Up" {
-                                self.keys[1][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 60) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None, false);
-                            } else if selected.flag == "Bottom" {
-                                self.keys[2][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 40) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None, false);
-                            } else if selected.flag == "Right" {
-                                self.keys[3][selected.key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 140) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as u128, None, None, false);
+                            match selected.flag {
+                                KeyFlag::Left => {
+                                    println!("left");
+                                    let empty_note = GameKey::new(GameObject {active: true, x: ((app.width/2) - 160) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as i128, None, None, false);
+                                    delete_key(&selected, 0, empty_note, &mut self.keys);
+                                },
+                                KeyFlag::Up => {
+                                    println!("up");
+                                    let empty_note = GameKey::new(GameObject {active: true, x: ((app.width/2) - 60) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as i128, None, None, false);
+                                    delete_key(&selected, 1, empty_note, &mut self.keys);
+                                },
+                                KeyFlag::Bottom => {
+                                    let empty_note = GameKey::new(GameObject {active: true, x: ((app.width/2) + 40) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as i128, None, None, false);
+                                    delete_key(&selected, 2, empty_note, &mut self.keys);
+                                },
+                                KeyFlag::Right => {
+                                    let empty_note = GameKey::new(GameObject {active: true, x: ((app.width/2) + 140) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as i128, None, None, false);
+                                    delete_key(&selected, 3, empty_note, &mut self.keys);
+                                },
                             }
                             self.selected_object = None;
                         },
                         None => {},
                     }
                 }
-                // lets see this
                 Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
                     match &self.song_game {
                         Some(song_game) => {
-                            // println!(" start: {}, end: {}, state {}", self.start_index, song_game.end - 250, self.start_index < song_game.end - 250); // 7672
                             if self.start_index < song_game.end - 150 {
                                 self.start_index += 100;
                             }
                         }
                         None => {}
                     }
-                    
                 }
                 Event::KeyDown { keycode: Some(Keycode::Down), .. } => {
                     if self.start_index > 100 {
@@ -241,7 +245,7 @@ impl GameLogic {
                                 self.start_index += 10;
                             } else if y == -1 && self.start_index > 10 {
                                 self.start_index -= 10;
-                            } else if (y == -1 && self.start_index < 10) {
+                            } else if y == -1 && self.start_index < 10 {
                                 self.start_index = 0;
                             }
                         }
@@ -254,27 +258,13 @@ impl GameLogic {
                 _ => {}
             }
 
-            // for clicking on the scroll slider
-            /*  
-            match &self.song_game {
-                Some(song_game) => {
-                    let scroll_value = (song_game.end as f32 / 20000.0) * (self.scroll_slider.is_hover(&event, app) as f32);
-
-                    if scroll_value <= song_game.end as f32 - self.index_range as f32 {
-                        self.start_index = scroll_value as u128;
-                    }
-                }
-                None => {}
-            }
-            */
-
             if self.buttons[0].on_click(&event) { // save
                 self.save(app_state)
             }
 
             if self.buttons[1].on_click(&event) { // play
                 match &self.song_game {
-                    Some(song) => {
+                    Some(_song) => {
                         app.testing_song = Some(Testing{song: self.generate_array(), start_point: self.start_point - app.coordination_data.base_time as f64});
                     },
                     None => {},
@@ -352,13 +342,13 @@ impl GameLogic {
 
                             if self.add_key {
                                 if i == 0 {
-                                    list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 175) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Left".to_owned()), None, false);
+                                    list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 175) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as i128, Some(KeyFlag::Left), None, false);
                                 } else if i == 1 {
-                                    list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Up".to_owned()), None, false);
+                                    list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as i128, Some(KeyFlag::Up), None, false);
                                 } else if i == 2 {
-                                    list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 25) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Bottom".to_owned()), None, false);
+                                    list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 25) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as i128, Some(KeyFlag::Bottom), None, false);
                                 } else if i == 3 {
-                                    list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 125) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, Some("Right".to_owned()), None, false);
+                                    list[key] = GameKey::new(GameObject {active: true, x: ((app.width/2) + 125) as f32, y: 0.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as i128, Some(KeyFlag::Right), None, false);
                                 }
                             }
 
@@ -380,7 +370,7 @@ impl GameLogic {
                                         match &list[key].flag {
                                             Some(flag) => {
                                                 if !self.add_key {
-                                                    self.selected_object = Some(selected{ key, flag: flag.clone()});
+                                                    self.selected_object = Some(Selected{ key, flag: flag.clone()});
                                                 }
                                             },
                                             None => {},
@@ -411,41 +401,52 @@ impl GameLogic {
                                 match list[key].connected {
                                     Some(con_value) => {
                                         if key < con_value as usize {
-                                            if flag == "Left" {
-                                                left_keys.push(Note { time: key as u128, holding: con_value as u128 - key as u128});
-                                            } else if flag == "Up" {
-                                                up_keys.push(Note { time: key as u128, holding: con_value - key as u128});
-                                            } else if flag == "Bottom" {
-                                                bottom_keys.push(Note { time: key as u128, holding: con_value - key as u128});
-                                            } else if flag == "Right" {
-                                                right_keys.push(Note { time: key as u128, holding: con_value - key as u128});
+                                            match flag {
+                                                KeyFlag::Left => {
+                                                    left_keys.push(Note { time: key as u128, holding: con_value as u128 - key as u128});
+                                                },
+                                                KeyFlag::Up => {
+                                                    up_keys.push(Note { time: key as u128, holding: con_value - key as u128});
+                                                },
+                                                KeyFlag::Bottom => {
+                                                    bottom_keys.push(Note { time: key as u128, holding: con_value - key as u128});
+                                                },
+                                                KeyFlag::Right => {
+                                                    right_keys.push(Note { time: key as u128, holding: con_value - key as u128});
+                                                },
                                             }
                                         }
                                     },
                                     None => {
-                                        if flag == "Left" {
-                                            left_keys.push(Note { time: key as u128, holding: 0});
-                                        } else if flag == "Up" {
-                                            up_keys.push(Note { time: key as u128, holding: 0});
-                                        } else if flag == "Bottom" {
-                                            bottom_keys.push(Note { time: key as u128, holding: 0});
-                                        } else if flag == "Right" {
-                                            right_keys.push(Note { time: key as u128, holding: 0});
+                                        match flag {
+                                            KeyFlag::Left => {
+                                                left_keys.push(Note { time: key as u128, holding: 0});
+                                            },
+                                            KeyFlag::Up => {
+                                                up_keys.push(Note { time: key as u128, holding: 0});
+                                            },
+                                            KeyFlag::Bottom => {
+                                                bottom_keys.push(Note { time: key as u128, holding: 0});
+                                            },
+                                            KeyFlag::Right => {
+                                                right_keys.push(Note { time: key as u128, holding: 0});
+                                            },
                                         }
                                     },
                                 }
-
                             },
                             None => {},
                         }
                     }
                 }
                 
-                let edited_song = Song { name: song.name.clone(), id: song.id.clone(), left_keys, up_keys, bottom_keys, right_keys, end: song.end };
+                
+
+                let edited_song = Song { name: song.name.clone(), id: song.id.clone(), left_keys, up_keys, bottom_keys, right_keys, end: song.end, sync: song.sync};
                 return edited_song;
             },
             None => {
-                return Song { name: " ".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec![], bottom_keys: vec![], right_keys: vec![], end: 0 };
+                return Song { name: " ".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec![], bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0) };
             },
         }
     }
@@ -466,4 +467,16 @@ fn save_json(song: &Song, app_state: &mut AppState) -> Result<(), Box<dyn std::e
         None => {},
     }
     Ok(())
+}
+
+fn delete_key(selected: &Selected, index: usize, empty_note: GameKey, keys: &mut Vec<Vec<GameKey>>) {
+    match keys[index][selected.key].connected{
+        Some(connected) => {
+            if connected > selected.key as u128 {
+                keys[index][connected as usize] = empty_note;
+            }
+        },
+        None => {},
+    }
+    keys[index][selected.key] = empty_note;
 }

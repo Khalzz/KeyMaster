@@ -33,6 +33,7 @@ pub struct KeyButton {
     pub image_array: Vec<Rect>,
     pub state: usize,
     pub timer: Instant,
+    pub timer_hold: Instant,
     pub pressed_time: u128,
 }
 
@@ -53,6 +54,7 @@ impl KeyButton {
             image_array,
             state: 0,
             timer: Instant::now(),
+            timer_hold: Instant::now(),
             pressed_time: 0,
         }
     }
@@ -94,13 +96,14 @@ impl KeyButton {
         }
     }
 
-    pub fn update(&mut self,song: &mut Song, milliseconds: u128, event: &sdl2::event::Event, key: sdl2::keyboard::Keycode, play_keys: &mut [Keycode; 4]) -> bool {
+    pub fn update(&mut self,song: &mut Song, milliseconds: u128, event: &sdl2::event::Event, key: i32, play_keys: &mut [i32; 4]) -> bool {
         if self.game_object.active {
             match event {
-                sdl2::event::Event::KeyDown { keycode: Some(key_value), .. } if *key_value == key => {
+                sdl2::event::Event::KeyDown { keycode: Some(key_value), .. } if *key_value == Keycode::from_i32(key).unwrap() => {
                     if self.repeat == true {
                         // song generation
                         self.timer = Instant::now();
+                        self.timer_hold = Instant::now();
                         self.pressed_time = milliseconds;
 
                         self.repeat = false;
@@ -108,10 +111,17 @@ impl KeyButton {
                         self.state = 1;
                     }
                 },
-                sdl2::event::Event::KeyUp { keycode: Some(key_value), .. } if *key_value == key => {
+                sdl2::event::Event::KeyUp { keycode: Some(key_value), .. } if *key_value == Keycode::from_i32(key).unwrap() => {
                     if self.repeat == false {
                         let elapsed_time = self.timer.elapsed();
-                        let note = Note { time: self.pressed_time, holding: elapsed_time.as_millis() / 10};
+
+                        let mut holding_value = elapsed_time.as_millis() / 10;
+
+                        if holding_value < 20 {
+                            holding_value = 0;
+                        }
+
+                        let note = Note { time: self.pressed_time, holding: holding_value};
 
                         if key == play_keys[0] {
                             self.left_keys.push(note);

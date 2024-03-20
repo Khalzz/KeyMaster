@@ -2,7 +2,7 @@
 // the way we "render our objects its based on our object itself" so i will save that "render value" for later
 
 // When i want to do other "element" i have to put this inside, since its the "shorter way" of adding the "basic position and dimensions data"
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct GameObject {
     pub active: bool,
     pub x: f32,

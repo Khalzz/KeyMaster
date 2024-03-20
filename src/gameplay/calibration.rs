@@ -17,22 +17,12 @@ use crate::{app::{self, App, AppState, CoordinationData, GameState}, game_object
 impl GameLogic {
     // this is called once
     pub fn new(app: &mut App) -> Self {
-        let calibration_note = GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as u128, None, None, false);
+        let calibration_note = GameKey::new(GameObject {active: true, x: ((app.width/2) - 75) as f32, y: -100.0, width: 50.0, height: 50.0}, Color::RGB(0, 200, 0), app.coordination_data.key_speed, 0 as i128, None, None, false);
 
         // UI ELEMENT
-        let timer = Button::new(
-            GameObject {
-                active: true, x:(app.width - 40) as f32, y: 10.0, width: 0.0, height: 0.0},
-            Some(String::from("Timer")),
-            Color::RGB(100, 100, 100),
-            Color::WHITE,
-            Color::RGB(0, 200, 0),
-            Color::RGB(0, 0, 0),
-            None,
-            TextAlign::Center
-        );
-        let enter_timer = Button::new(GameObject {active: true, x:(app.width - 40) as f32, y: 35.0, width: 0.0, height: 0.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
-        let out_timer = Button::new(GameObject { active: true, x:(app.width - 40) as f32, y: 60.0, width: 0.0, height: 0.0}, Some(String::from("Timer")), Color::RGB(100, 100, 100),Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0), None, TextAlign::Center);
+        let timer = Button::new(GameObject {active: true, x:(app.width - 40) as f32, y: 10.0, width: 0.0, height: 0.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None,TextAlign::Center);
+        let enter_timer = Button::new(GameObject {active: true, x:0 as f32, y: app.height as f32 - 150.0, width: app.width as f32, height: 10.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
+        let out_timer = Button::new(GameObject { active: true, x:0 as f32, y: app.height as f32 - 80.0, width: app.width as f32, height: 0.0}, Some(String::from("Timer")), Color::RGB(100, 100, 100),Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0), None, TextAlign::Center);
         // controlers 
         let key_up = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) - 95) as f32, y: app.height as f32 - 160.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
 
@@ -87,11 +77,11 @@ impl GameLogic {
 
     fn handle_notes(started: &mut bool, enter_timer: &mut Button, out_timer: &mut Button, note: &mut GameKey, milliseconds: u128, delta_time: Duration, height: u32, app_state: &mut AppState, app: &mut App) {
         let inside: bool;
-        if note.mili < milliseconds {
+        if note.mili < milliseconds.try_into().unwrap() {
             note.render(app);
             note.update(delta_time, app.coordination_data.key_speed);         
 
-            if (note.game_object.y > (height - 210) as f32) && (note.game_object.y < (height - 90) as f32) {
+            if (note.game_object.y > (height - 150) as f32) && (note.game_object.y < (height - 80) as f32) {
                 inside = true;
             } else {
                 inside = false;
@@ -100,16 +90,16 @@ impl GameLogic {
             if inside && *started {
                 *started = false;
                 enter_timer.text_color = Color::RED;
-                app.coordination_data.base_time = milliseconds;
+                app.coordination_data.base_time = milliseconds as i128;
                 enter_timer.text = Some(format!("{}", app.coordination_data.base_time));
             } else if !inside && *started == false {
                 *started = true;
                 out_timer.text_color = Color::RED;
-                app.coordination_data.end_time = milliseconds;
+                app.coordination_data.end_time = milliseconds as i128;
                 out_timer.text = Some(format!("{}", app.coordination_data.end_time));
             }
 
-            if app.coordination_data.end_time > 0 && milliseconds >= app.coordination_data.end_time + 50 {
+            if app.coordination_data.end_time > 0 && milliseconds >= (app.coordination_data.end_time + 50).try_into().unwrap() {
                 app_state.state = GameState::MainMenu;
             }
         }

@@ -1,6 +1,6 @@
 use std::os::raw::c_void;
 
-use sdl2::{mouse::MouseButton, render::{Canvas, TextureCreator, TextureQuery}, sys::SDL_Texture, ttf::Font, video::{Window, WindowContext}};
+use sdl2::{mouse::MouseButton, render::{Canvas, Texture, TextureCreator, TextureQuery}, ttf::Font, video::{Window, WindowContext}};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 
@@ -26,7 +26,7 @@ pub struct Button {
     pub clicked: bool,
     pub lclicked: bool,
     pub toggle: Option<bool>,
-    pub text_align: TextAlign
+    pub text_align: TextAlign,
 }
 
 impl Button {
@@ -44,7 +44,7 @@ impl Button {
             clicked: false,
             lclicked: false,
             toggle,
-            text_align
+            text_align,
         }
     }
 

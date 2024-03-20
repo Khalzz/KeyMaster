@@ -1,5 +1,5 @@
-use sdl2::{render::{Canvas, TextureCreator}, video::{Window, WindowContext}, pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
-use crate::{ app::{App, AppState, GameState}, game_object::GameObject, input::button_module::{Button, TextAlign}, UI::text::Label};
+use sdl2::{event::Event, keyboard::Keycode, pixels::Color, ttf::Font};
+use crate::{ app::{App, AppState, GameState}, game_object::GameObject, input::button_module::{Button, TextAlign}};
 
 enum MenuSelector {
     Play,
@@ -65,36 +65,59 @@ impl GameLogic<'_> {
     }
 
     pub fn update(&mut self, _font: &Font, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
-        let mut texture_creator = app.canvas.texture_creator();
+        let texture_creator = app.canvas.texture_creator();
 
         // rendering buttons
         for btn in 0..self.btn_list.len() {
             self.btn_list[btn].render(&mut app.canvas, &texture_creator, _font);
         }
 
+        for (i, btn) in self.btn_list.iter_mut().enumerate() {
+            if i == self.actual_setting {
+                btn.color = Color::RGB(0, 200, 0);
+            } else {
+                btn.color = Color::RGB(100, 100, 100);
+            }
+        }
+        
+
         // input reading and sending stuff to the canvas
-        Self::event_handler(app_state, event_pump, &mut self.actual_setting, self.actual_opt, &mut self.btn_list);
+        self.event_handler(app_state, event_pump, app);
     }
 
-    fn event_handler(app_state: &mut AppState, event_pump: &mut sdl2::EventPump, actual_setting: &mut usize, actual_opt: &MenuSelector, btn_list: &mut [Button;3]) {
+    fn event_handler(&mut self, app_state: &mut AppState, event_pump: &mut sdl2::EventPump, app: &mut App) {
         for event in event_pump.poll_iter() {
-            match event { 
+            match event {
+                sdl2::event::Event::KeyDown { keycode: Some(key_value), .. } if key_value == Keycode::from_i32(app.play_keys[0]).unwrap() => {
+                    // notink
+                },
+                sdl2::event::Event::KeyDown { keycode: Some(key_value), .. } if key_value == Keycode::from_i32(app.play_keys[1]).unwrap() => {
+                    if self.actual_setting > usize::MIN {
+                        self.actual_setting -= 1;
+                    }
+                },
+                sdl2::event::Event::KeyDown { keycode: Some(key_value), .. } if key_value == Keycode::from_i32(app.play_keys[2]).unwrap() => {
+                    if self.actual_setting < self.btn_list.len() - 1 {
+                        self.actual_setting += 1;
+                    }
+                },
+                sdl2::event::Event::KeyDown { keycode: Some(key_value), .. } if key_value == Keycode::from_i32(app.play_keys[3]).unwrap() => {
+                    if self.actual_setting == 0 {
+                        app_state.state = GameState::SelectingSong
+                    } else if self.actual_setting == 1 {
+                        app_state.state = GameState::Settings
+                    } else if self.actual_setting == 2 {
+                        app_state.state = GameState::Quitting
+                    }
+                },
+
                 Event::Quit { .. } => {
                     app_state.is_running = false;
                 },
                 _ => {}
             }
 
-            // change system of selecting options with arrows to on clicks
-                if btn_list[0].on_click(&event) {
-                    app_state.state = GameState::SelectingSong
-                }
-                if btn_list[1].on_click(&event) {
-                    app_state.state = GameState::Settings
-                }
-                if btn_list[2].on_click(&event) {
-                    app_state.state = GameState::Quitting
-                }
+           
         }
     }
 }
