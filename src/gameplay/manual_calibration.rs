@@ -76,9 +76,6 @@ impl GameLogic<'_> {
         }
         */
 
-        
-
-
         // timer
         let elapsed_time = self.start_time.elapsed();
         let milliseconds = elapsed_time.as_millis() / 10;

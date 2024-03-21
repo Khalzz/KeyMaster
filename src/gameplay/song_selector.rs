@@ -122,6 +122,17 @@ impl GameLogic<> {
                         app.reseted = false;
                         app_state.state = GameState::Playing;
                 },
+                Event::KeyDown { keycode: Some(Keycode::Space), .. }  => {
+                    self.loading(&mut texture_creator, _font, &mut app.canvas);
+                        match &self.btn_list[self.actual_button].button.text {
+                            Some(_text) => {
+                                app_state.song_folder = Some(_text.clone());
+                            },
+                            None => {},
+                        }
+                        app.reseted = false;
+                        app_state.state = GameState::SongCalibration;
+                },
                 Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. }  => {
                     app_state.state = GameState::MainMenu;
                 },

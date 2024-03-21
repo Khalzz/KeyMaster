@@ -26,6 +26,7 @@ mod gameplay {
     pub mod controller;
     pub mod alert;
     pub mod manual_calibration;
+    pub mod game_calibration;
 }
 
 fn main() -> Result<(), String> {

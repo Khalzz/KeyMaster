@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use crate::game_object::GameObject;
-use crate::gameplay::play;
+use crate::gameplay::{game_calibration, play};
 use crate::gameplay::editor;
 use crate::gameplay::main_menu;
 use crate::gameplay::settings;
@@ -53,6 +53,7 @@ pub enum GameState {
     Controlers,
     Quitting,
     SelectingSong,
+    SongCalibration,
 }
 
 pub struct CoordinationData {
@@ -283,6 +284,7 @@ impl App {
         let mut controller = controller::GameLogic::new(&mut self);
         let mut song_selector = song_selector::GameLogic::new(&mut self);
         let mut play = play::GameLogic::new(&mut self, &mut app_state);
+        let mut game_calibration = game_calibration::GameLogic::new(&mut self, &mut app_state);
         let mut editor = editor::GameLogic::new(&mut self, &mut app_state, &_font);
         let mut calibration = calibration::GameLogic::new(&mut self);
         let mut manual_calibration = manual_calibration::GameLogic::new(&mut self);
@@ -312,6 +314,15 @@ impl App {
                         self.reseted = true;
                     }
                     play.update(&_font, &mut app_state, &mut event_pump, &mut self, fft_data.lock().unwrap());
+                },
+                GameState::SongCalibration => {
+                    if !self.reseted {
+                        game_calibration = game_calibration::GameLogic::new(&mut self, &mut app_state);
+                        self.paused_time = 0;
+                        game_calibration.start_time = Instant::now();
+                        self.reseted = true;
+                    }
+                    game_calibration.update(&_font, &mut app_state, &mut event_pump, &mut self);
                 },
                 GameState::Editing => {
                     if !self.reseted {
