@@ -88,10 +88,6 @@ impl Button {
                         
                                     // render
                                     canvas.copy(&texture, None, Rect::new(text_x, text_y, text_width, text_height)).unwrap();
-
-                                    unsafe {
-                                        texture.destroy();
-                                    }
                                 },
                                 // if i do a tabulation this dont works good on calibnration
                                 Err(_) => {},
