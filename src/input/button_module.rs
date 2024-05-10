@@ -1,5 +1,3 @@
-use std::os::raw::c_void;
-
 use sdl2::{mouse::MouseButton, render::{Canvas, Texture, TextureCreator, TextureQuery}, ttf::Font, video::{Window, WindowContext}};
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
@@ -31,7 +29,6 @@ pub struct Button {
 
 impl Button {
     pub fn new(game_object: GameObject, text: Option<String>, color: Color, text_color: Color, hover_color: Color, clicked_color: Color, toggle: Option<bool>, text_align: TextAlign) -> Self {
-        
         Button {
             game_object,
             text: text,

@@ -9,10 +9,9 @@ use std::time::Instant;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Sample, SampleFormat};
 use rodio::{Decoder, Source};
-use rustfft::algorithm::Radix4;
 use rustfft::num_complex::{self, Complex, Complex32};
 use rustfft::num_traits::Zero;
-use rustfft::{Fft, FftDirection, FftPlanner, Length};
+use rustfft::FftPlanner;
 use sdl2::audio::{AudioCallback, AudioQueue, AudioSpecDesired};
 use sdl2::image::LoadTexture;
 use sdl2::messagebox::MessageBoxFlag;
@@ -218,14 +217,14 @@ impl App {
         let config = supported_config.into();
 
         let mut controls = Button::new(
-            GameObject {active: true, x:((self.width/2) - (100/2)) as f32, y: self.height as f32 - 60.0, width: 100.0, height: 50.0},
+            GameObject {active: true, x:10.0, y: self.height as f32 - 40.0, width: 500.0, height: 30.0},
             Some(String::from(&self.ctrl_string)),
-            Color::RGBA(100, 100, 100, 0),
+            Color::RGBA(100, 100, 200, 0),
             Color::WHITE,
             Color::RGB(0, 200, 0),
             Color::RGB(0, 0, 0),
             None, 
-            TextAlign::Center
+            TextAlign::Left
         );
 
         let mut last_update = Instant::now(); // Track the time of the last update
@@ -292,7 +291,7 @@ impl App {
         mixer::Music::set_volume(((self.volume_percentage as f32 / 100.0) * 128.0) as i32);
 
         while app_state.is_running {
-            controls.text = Some(self.controller_str());
+            controls.text = Some(self.controller_str(&app_state));
             self.canvas.set_draw_color(Color::RGBA(40, 40, 40, 100));
             self.canvas.clear();
             
@@ -374,7 +373,7 @@ impl App {
         Ok(settings)
     }
 
-    fn controller_str(&mut self) -> String {
+    fn controller_str(&mut self, apps_state: &AppState) -> String {
         let mut ctrl_string = "".to_owned();
 
         for (i, key) in self.play_keys.iter().enumerate() {
@@ -396,6 +395,14 @@ impl App {
                 },
                 None => {},
             }
+        }
+
+        match apps_state.state {
+            GameState::SelectingSong => {
+                ctrl_string += &(", space-[Sync]");
+
+            },
+            _ => {}
         }
 
         return ctrl_string;

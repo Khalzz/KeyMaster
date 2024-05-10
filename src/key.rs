@@ -1,17 +1,12 @@
 use std::time::Duration;
 
-use sdl2::image::LoadTexture;
 use sdl2::mouse::MouseButton;
-use sdl2::render::Texture;
 use sdl2::sys::SDL_Texture;
-use sdl2::{render::Canvas, video::Window, rect::Rect};
+use sdl2::rect::Rect;
 use sdl2::pixels::Color;
 
-use std::collections::HashMap;
-
-use crate::app::{self, App};
+use crate::app::App;
 use crate::game_object::GameObject;
-use crate::input::keybutton;
 
 #[derive(Clone, Copy)]
 pub enum KeyFlag {
@@ -94,7 +89,7 @@ impl GameKey {
 
             match end_texture {
                 Some(texture) => {
-                    app.canvas.copy(texture, None, Some(Rect::new(self.game_object.x as i32, self.game_object.y as i32, self.game_object.width as u32, self.game_object.height as u32)));
+                    app.canvas.copy(texture, None, Some(Rect::new(self.game_object.x as i32, self.game_object.y as i32, self.game_object.width as u32, self.game_object.height as u32))).expect("Something went wrong");
                     unsafe {
                         let raw_texture_ptr = texture as *const sdl2::render::Texture as *mut SDL_Texture;
                         sdl2::sys::SDL_DestroyTexture(raw_texture_ptr);

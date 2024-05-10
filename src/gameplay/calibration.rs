@@ -1,6 +1,6 @@
 use std::time::{Duration, Instant};
-use sdl2::{render::Canvas, video::Window, pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
-use crate::{app::{self, App, AppState, CoordinationData, GameState}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::KeyButton}, key::GameKey};
+use sdl2::{pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
+use crate::{app::{App, AppState, GameState}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::KeyButton}, key::GameKey};
 
  pub struct GameLogic { // here we define the data we use on our script
     last_frame: Instant,
@@ -41,7 +41,7 @@ impl GameLogic {
 
     // this is called every frame
     pub fn update(&mut self, _font: &Font, mut app_state: &mut AppState, mut event_pump: &mut sdl2::EventPump, app: &mut App) {
-        let mut texture_creator = app.canvas.texture_creator();
+        let texture_creator = app.canvas.texture_creator();
         let delta_time = self.delta_time();
 
         // timer

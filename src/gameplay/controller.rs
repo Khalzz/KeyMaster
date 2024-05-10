@@ -1,6 +1,5 @@
 use std::{fs::File, io::{Error, Write}, time::Instant};
 use sdl2::{pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
-use serde::{Deserialize, Serialize};
 use crate::{app::{App, AppState, GameController, GameState}, game_object::GameObject, input::button_module::{Button, TextAlign}};
 
 pub struct GameLogic { // here we define the data we use on our script
@@ -61,7 +60,7 @@ impl GameLogic {
                             play_keys[btn] = keycode as i32;
 
                             // save settings
-                            Self::save_to_file(GameController{ controller_array: *play_keys });
+                            Self::save_to_file(GameController{ controller_array: *play_keys }).expect("Something went wrong");
                         }
                     }
                     Self::reset(key_state);

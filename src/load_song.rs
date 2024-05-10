@@ -1,8 +1,8 @@
-use sdl2::{image::LoadTexture, pixels::Color};
+use sdl2::pixels::Color;
 use serde::{Deserialize, Serialize};
 use serde_json;
 
-use crate::{app::{self, App}, game_object::{self, GameObject}, input::keybutton::Note, key::{GameKey, KeyFlag}, UI::text};
+use crate::{app::App, game_object::GameObject, input::keybutton::Note, key::{GameKey, KeyFlag}};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Song {
@@ -36,7 +36,7 @@ impl Song {
         Ok(song)
     }
 
-    pub fn get_keys(mut self, app: &mut App, edit: bool) -> Vec<Vec<GameKey>> {
+    pub fn get_keys(self, app: &mut App, edit: bool) -> Vec<Vec<GameKey>> {
         let mut left_keys: Vec<GameKey> = Vec::new();
         let mut up_keys: Vec<GameKey> = Vec::new();
         let mut bottom_keys: Vec<GameKey> = Vec::new();
@@ -44,13 +44,7 @@ impl Song {
 
         
         let width = app.width;
-        let coordination_start = app.coordination_data.base_time;
         let key_speed = app.coordination_data.key_speed;
-        
-        let left_game_object = GameObject {active: true, x: ((width/2) - 175) as f32, y: -100.0, width: 50.0, height: 50.0};
-        let up_game_object = GameObject {active: true, x: ((width/2) - 75) as f32, y: -100.0, width: 50.0, height: 50.0};
-        let bottom_game_object = GameObject {active: true, x: ((width/2) + 25) as f32, y: -100.0, width: 50.0, height: 50.0};
-        let right_game_object = GameObject {active: true, x: ((width/2) + 125) as f32, y: -100.0, width: 50.0, height: 50.0};
         
         if edit == true {
             for spaces in 0..self.end {
@@ -60,22 +54,22 @@ impl Song {
                 right_keys.push(GameKey::new(GameObject {active: true, x: ((width/2) + 140) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, spaces as i128, None, None, false));
             }
 
-            Self::edit_list(self.left_keys.clone(),((width/2) - 175), ((width/2) - 160), &mut left_keys, width, key_speed, KeyFlag::Left);
-            Self::edit_list(self.up_keys.clone(),((width/2) - 75),((width/2) - 60),  &mut up_keys, width, key_speed, KeyFlag::Up);
-            Self::edit_list(self.bottom_keys.clone(),((width/2) + 25),((width/2) + 40),  &mut bottom_keys, width, key_speed, KeyFlag::Bottom);
-            Self::edit_list(self.right_keys.clone(),((width/2) + 125),((width/2) + 140),  &mut right_keys, width, key_speed, KeyFlag::Right);
+            Self::edit_list(self.left_keys.clone(),(width/2) - 175, (width/2) - 160, &mut left_keys, key_speed, KeyFlag::Left);
+            Self::edit_list(self.up_keys.clone(),(width/2) - 75,(width/2) - 60,  &mut up_keys, key_speed, KeyFlag::Up);
+            Self::edit_list(self.bottom_keys.clone(),(width/2) + 25,(width/2) + 40,  &mut bottom_keys, key_speed, KeyFlag::Bottom);
+            Self::edit_list(self.right_keys.clone(),(width/2) + 125,(width/2) + 140,  &mut right_keys, key_speed, KeyFlag::Right);
         } else {
-            Self::play_list(self.left_keys.clone(),((width/2) - 175), ((width/2) - 160), &mut left_keys, width, key_speed, KeyFlag::Left, app);
-            Self::play_list(self.up_keys.clone(),((width/2) - 75),((width/2) - 60),  &mut up_keys, width, key_speed, KeyFlag::Up, app);
-            Self::play_list(self.bottom_keys.clone(),((width/2) + 25),((width/2) + 40),  &mut bottom_keys, width, key_speed, KeyFlag::Bottom, app);
-            Self::play_list(self.right_keys.clone(),((width/2) + 125),((width/2) + 140),  &mut right_keys, width, key_speed, KeyFlag::Right, app);
+            Self::play_list(self.left_keys.clone(),(width/2) - 175, (width/2) - 160, &mut left_keys, key_speed, KeyFlag::Left, app);
+            Self::play_list(self.up_keys.clone(),(width/2) - 75,(width/2) - 60,  &mut up_keys, key_speed, KeyFlag::Up, app);
+            Self::play_list(self.bottom_keys.clone(),(width/2) + 25,(width/2) + 40,  &mut bottom_keys, key_speed, KeyFlag::Bottom, app);
+            Self::play_list(self.right_keys.clone(),(width/2) + 125,(width/2) + 140,  &mut right_keys, key_speed, KeyFlag::Right, app);
         }
 
         return vec![left_keys, up_keys, bottom_keys, right_keys]
     }
 
-    pub fn play_list(self_list:Vec<Note>, x: u32, x2: u32, keys_list: &mut Vec<GameKey>, width: u32, key_speed: f32, flag: KeyFlag, app: &mut App) {
-        let mut color = Color::RGB(0, 0, 0);
+    pub fn play_list(self_list:Vec<Note>, x: u32, x2: u32, keys_list: &mut Vec<GameKey>, key_speed: f32, flag: KeyFlag, app: &mut App) {
+        let color = Color::RGB(0, 0, 0);
 
         for values in self_list.clone().iter_mut() {
             if u128::from(values.time) > app.coordination_data.base_time.try_into().unwrap() {
@@ -97,8 +91,8 @@ impl Song {
         }
     }
 
-    pub fn edit_list(self_list:Vec<Note>, x: u32, x2: u32, keys_list: &mut Vec<GameKey>, width: u32, key_speed: f32, flag: KeyFlag) {
-        for (i, values) in keys_list.clone().iter().enumerate() {
+    pub fn edit_list(self_list:Vec<Note>, x: u32, x2: u32, keys_list: &mut Vec<GameKey>, key_speed: f32, flag: KeyFlag) {
+        for (i, _values) in keys_list.clone().iter().enumerate() {
             match Self::contains_note(i as u128, self_list.clone()) {
                 Some(note) => {
                     if note.holding >= 50 {

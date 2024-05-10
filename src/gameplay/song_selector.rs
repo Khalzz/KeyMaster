@@ -1,7 +1,7 @@
-use std::{ffi::OsString, fs, path::Path};
+use std::{fs, path::Path};
 
 use sdl2::{event::Event, image::LoadTexture, keyboard::Keycode, pixels::Color, rect::Rect, render::{Canvas, Texture, TextureCreator}, sys::SDL_Texture, ttf::Font, video::{Window, WindowContext}};
-use crate::{ app::{self, App, AppState, GameState}, game_object::GameObject, input::button_module::{Button, TextAlign}};
+use crate::{ app::{App, AppState, GameState}, game_object::GameObject, input::button_module::{Button, TextAlign}};
 
 pub struct SongFile {
     button: Button,
@@ -41,7 +41,7 @@ impl GameLogic<> {
 
         match &self.btn_list[self.actual_button].img_texture {
             Some(texture) => {
-                    app.canvas.copy(&texture, None, Some(Rect::new((app.width as f32 - 600.0) as i32 / 2 as i32, ((app.height as f32 / 2.0) - 150.0) as i32, 300, 300)));
+                    app.canvas.copy(&texture, None, Some(Rect::new((app.width as f32 - 600.0) as i32 / 2 as i32, ((app.height as f32 / 2.0) - 150.0) as i32, 300, 300))).unwrap();
                     unsafe {
                         let raw_texture_ptr = texture as *const sdl2::render::Texture as *mut SDL_Texture;
                         sdl2::sys::SDL_DestroyTexture(raw_texture_ptr);

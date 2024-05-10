@@ -1,12 +1,11 @@
-use app::{App};
-use sdl2::{image::{self, LoadTexture}, render::{Canvas, Texture}, video::Window};
+use app::App;
 
 mod app;
 mod key;
 mod game_object;
 mod load_song;
 
-mod UI {
+mod ui {
     pub mod text;
 }
 
@@ -24,7 +23,6 @@ mod gameplay {
     pub mod calibration;
     pub mod settings;
     pub mod controller;
-    pub mod alert;
     pub mod manual_calibration;
     pub mod game_calibration;
 }

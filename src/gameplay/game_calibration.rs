@@ -42,7 +42,7 @@ pub struct GameLogic<'a> { // here we define the data we use on our script
     frame_timer: Duration,
     actual_button: usize,
     calibration: Button,
-
+    controller: Button,
 } 
 
 impl GameLogic<'_> {
@@ -121,9 +121,33 @@ impl GameLogic<'_> {
         let key_bottom = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) + 5) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
         let key_right = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) + 105) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
 
+        // keys
+        let mut ctrl_string = "".to_owned();
+
+        for (i, key) in app.play_keys.iter().enumerate() {
+            match Keycode::from_i32(*key) {
+                Some(keycode) => {
+                    let mut ctrl_opt = "";
+
+                    if i == 1 {
+                        ctrl_opt = "-[-], ";
+                    } else if i == 2 {
+                        ctrl_opt = "-[+] ";
+                    }
+
+                    if i == 1 || i == 2 {
+                        ctrl_string += &(keycode.to_string() + ctrl_opt);
+                    }
+                },
+                None => {},
+            }
+        }
+        ctrl_string += &(", ESCAPE-[Back]");
+
         // buttons
         let key_state = KeyState { left: Note { state: false, active: true }, top: Note { state: false, active: true }, bottom: Note { state: false, active: true }, right: Note { state: false, active: true }};
         let calibration = Button::new(GameObject { active: true, x:0 as f32, y: 10.0, width: app.width as f32, height: 0.0}, Some(String::from("Calibration")), Color::RGB(100, 100, 100),Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0), None, TextAlign::Center);
+        let controller = Button::new(GameObject { active: true, x:0 as f32, y: 40.0, width: app.width as f32, height: 0.0}, Some(String::from(ctrl_string)), Color::RGB(100, 100, 100),Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0), None, TextAlign::Center);
 
         Self {
             last_frame: Instant::now(),
@@ -148,7 +172,8 @@ impl GameLogic<'_> {
             frame_timer: Duration::new(0, 0),
             actual_button: 0,
             song_sync,
-            calibration
+            calibration,
+            controller
         }
     }
 
@@ -187,6 +212,8 @@ impl GameLogic<'_> {
         
         self.calibration.text = Some(self.song_sync.to_string());
         self.calibration.render(&mut app.canvas, &app.texture_creator, &_font); 
+
+        self.controller.render(&mut app.canvas, &app.texture_creator, &_font); 
 
         if milliseconds >= 300 && self.started_song == true {
             println!("{}", self.started_song);
