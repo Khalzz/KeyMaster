@@ -81,8 +81,8 @@ impl GameLogic<'_> {
                             bottom_keys: vec![],
                             right_keys: vec![],
                             end: 0,
-                            sync: Some(0)
-                            
+                            sync: Some(0), 
+                            bpm: Some(0)
                         };
                         match Song::new(folder) {
                             Ok(song) => {
@@ -159,7 +159,7 @@ impl GameLogic<'_> {
             key_state,
             song_keys,
             canvas_height: app.height,
-            maked_song: Song { name: "Test".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec!(), bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0) },
+            maked_song: Song { name: "Test".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec!(), bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0), bpm: Some(0)},
             started_song: true,
             started_level: false,
             song,

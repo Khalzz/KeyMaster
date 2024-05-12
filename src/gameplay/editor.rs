@@ -45,7 +45,8 @@ impl GameLogic {
             bottom_keys: vec![],
             right_keys: vec![],
             end: 0,
-            sync: Some(0)
+            sync: Some(0),
+            bpm: Some(0)
         };
 
         let start_index = 0;
@@ -143,8 +144,10 @@ impl GameLogic {
                     for button in &self.buttons {
                         button.render(&mut app.canvas, &texture_creator, _font);
                     }
+                    
+                    
 
-                    for list in &mut self.keys {
+                    for list in [4,0,1,2,3] {
                         let mut note_spaces = 0.0;
                         let temp_list = self.start_index as usize ..(self.start_index as usize + self.index_range as usize);
                         if self.start_index < self.end - self.index_range as u128 {
@@ -153,14 +156,14 @@ impl GameLogic {
                                 match &self.selected_object {
                                     Some(selected) => {
                                         if key == selected.key {
-                                            list[key].color = Color::RGB(100, 100, 100);
+                                            self.keys[list][key].color = Color::RGB(100, 100, 100);
                                         }
                                     }
                                     None => {}
                                 }
                                 
-                                list[key].render(app);
-                                list[key].game_object.y = app.height as f32 - (note_spaces);
+                                self.keys[list][key].render(app);
+                                self.keys[list][key].game_object.y = app.height as f32 - (note_spaces);
                                 note_spaces += 0.70 * self.note_spaces_mod;
                             }
                         } else {
@@ -171,7 +174,6 @@ impl GameLogic {
                         for (i, button_key) in key_buttons.iter_mut().enumerate() {
                             button_key.render(app, i);
                         }
-
                         // self.scroll_slider.render(app, _font);
                     }
                 }
@@ -217,6 +219,7 @@ impl GameLogic {
                                     let empty_note = GameKey::new(GameObject {active: true, x: ((app.width/2) + 140) as f32, y: 0.0, width: 20.0, height: 6.0}, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, 0 as i128, None, None, false);
                                     delete_key(&selected, 3, empty_note, &mut self.keys);
                                 },
+                                KeyFlag::Bpm => {},
                             }
                             self.selected_object = None;
                         },
@@ -293,14 +296,20 @@ impl GameLogic {
                 }
             }
 
+
             for (i, list) in self.keys.iter_mut().enumerate() {
                 if self.start_index < self.end - self.index_range as u128 {
                     for key in self.start_index as usize..self.start_index as usize + self.index_range as usize {
                         list[key].is_hover(&event);
                         if list[key].hover {
                             match list[key].flag {
-                                Some(_) => {
-                                    list[key].color = Color::RGB(0, 50, 50);
+                                Some(flag) => {
+                                    match flag {
+                                        KeyFlag::Bpm => {},
+                                        _ => {
+                                            list[key].color = Color::RGB(0, 50, 50);
+                                        }
+                                    }
                                 },
                                 None => {
                                     if self.changing_start == true {
@@ -369,13 +378,18 @@ impl GameLogic {
                                     None => {
                                         match &list[key].flag {
                                             Some(flag) => {
-                                                if !self.add_key {
-                                                    self.selected_object = Some(Selected{ key, flag: flag.clone()});
+                                                match flag {
+                                                    KeyFlag::Bpm => {},
+                                                    _ => {
+                                                        if !self.add_key {
+                                                            self.selected_object = Some(Selected{ key, flag: flag.clone()});
+                                                        }
+                                                    }
                                                 }
+                                                
                                             },
                                             None => {},
                                         }
-
                                     }
                                 }
                             }
@@ -414,6 +428,7 @@ impl GameLogic {
                                                 KeyFlag::Right => {
                                                     right_keys.push(Note { time: key as u128, holding: con_value - key as u128});
                                                 },
+                                                KeyFlag::Bpm => {},
                                             }
                                         }
                                     },
@@ -431,6 +446,7 @@ impl GameLogic {
                                             KeyFlag::Right => {
                                                 right_keys.push(Note { time: key as u128, holding: 0});
                                             },
+                                            KeyFlag::Bpm => {},
                                         }
                                     },
                                 }
@@ -442,11 +458,11 @@ impl GameLogic {
                 
                 
 
-                let edited_song = Song { name: song.name.clone(), id: song.id.clone(), left_keys, up_keys, bottom_keys, right_keys, end: song.end, sync: song.sync};
+                let edited_song = Song { name: song.name.clone(), id: song.id.clone(), left_keys, up_keys, bottom_keys, right_keys, end: song.end, sync: song.sync, bpm: song.bpm};
                 return edited_song;
             },
             None => {
-                return Song { name: " ".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec![], bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0) };
+                return Song { name: " ".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec![], bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0), bpm: Some(0) };
             },
         }
     }

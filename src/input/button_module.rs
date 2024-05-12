@@ -136,7 +136,6 @@ impl Button {
                         self.clicked = true;
                     }
                 },
-                
                 _ => {} // in every other case we will do nothing
             }   
             return self.clicked;   

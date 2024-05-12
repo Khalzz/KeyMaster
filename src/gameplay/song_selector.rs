@@ -1,6 +1,6 @@
 use std::{fs, path::Path};
 
-use sdl2::{event::Event, image::LoadTexture, keyboard::Keycode, pixels::Color, rect::Rect, render::{Canvas, Texture, TextureCreator}, sys::SDL_Texture, ttf::Font, video::{Window, WindowContext}};
+use sdl2::{event::Event, image::LoadTexture, keyboard::Keycode, pixels::Color, rect::Rect, render::{Canvas, Texture, TextureCreator}, sys::{KeyCode, SDL_Texture}, ttf::Font, video::{Window, WindowContext}};
 use crate::{ app::{App, AppState, GameState}, game_object::GameObject, input::button_module::{Button, TextAlign}};
 
 pub struct SongFile {
@@ -111,6 +111,17 @@ impl GameLogic<> {
                         self.actual_button = 0;
                     }
                 },
+                sdl2::event::Event::KeyDown { keycode: Some(Keycode::Delete), .. } => {
+                    self.loading(&mut texture_creator, _font, &mut app.canvas);
+                    match &self.btn_list[self.actual_button].button.text {
+                        Some(_text) => {
+                            app_state.song_folder = Some(_text.clone());
+                        },
+                        None => {},
+                    }
+                    app.reseted = false;
+                    app_state.state = GameState::Editing;
+            },
                 sdl2::event::Event::KeyDown { keycode: Some(key_value), .. } if key_value == Keycode::from_i32(app.play_keys[3]).unwrap() => {
                         self.loading(&mut texture_creator, _font, &mut app.canvas);
                         match &self.btn_list[self.actual_button].button.text {

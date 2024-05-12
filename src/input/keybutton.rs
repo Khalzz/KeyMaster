@@ -21,6 +21,7 @@ pub struct Note {
     pub holding: u128
 }
 
+#[derive(Clone)]
 pub struct KeyButton {
     pub game_object: GameObject,
     pub color: Color,

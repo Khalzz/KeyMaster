@@ -13,7 +13,8 @@ pub enum KeyFlag {
     Left,
     Up,
     Bottom,
-    Right
+    Right,
+    Bpm
 }
 
 #[derive(Clone, Copy)]
@@ -69,6 +70,7 @@ impl GameKey {
                             note_texture = &app.textures.purple_note;
                             hold_texture = &app.textures.purple_hold;
                         },
+                        KeyFlag::Bpm => { note_texture = &None },
                     }
                     
                     if self.muted {
@@ -106,7 +108,6 @@ impl GameKey {
     }
 
     pub fn update(&mut self, deltatime: Duration, key_speed: f32) {
-        // this is a key for a rythm game so its gonna move down :b
         self.game_object.y += key_speed * deltatime.as_secs_f32();
     }
 

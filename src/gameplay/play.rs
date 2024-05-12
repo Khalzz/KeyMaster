@@ -1,7 +1,6 @@
 use std::{sync::MutexGuard, time::{Duration, Instant}};
 use sdl2::{event::Event, keyboard::Keycode, mixer::{self, Music}, pixels::Color, rect::{Point, Rect}, render::Canvas, ttf::Font, video::Window};
-use serde_json::value;
-use crate::{app::{App, AppState, GameState}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::KeyButton}, key::GameKey, load_song::Song};
+use crate::{app::{App, AppState, GameState}, game_object::{self, GameObject}, input::{button_module::{Button, TextAlign}, keybutton::KeyButton}, key::GameKey, load_song::Song};
 
 const NUM_BARS: usize = 20;
 
@@ -49,7 +48,9 @@ pub struct GameLogic<'a> { // here we define the data we use on our script
     combo_val: u32,
     max_combo: u32,
     actual_button: usize,
-    ui_texts: Vec<Button>
+    ui_texts: Vec<Button>,
+    bpm_timer: Instant,
+    bpm_bars: Vec<BeatLine>
 } 
 
 impl GameLogic<'_> {
@@ -88,8 +89,8 @@ impl GameLogic<'_> {
                             bottom_keys: vec![],
                             right_keys: vec![],
                             end: 0,
-                            sync: Some(0)
-                            
+                            sync: Some(0),
+                            bpm: Some(0)
                         };
                         match Song::new(folder) {
                             Ok(song) => {
@@ -156,6 +157,8 @@ impl GameLogic<'_> {
 
         // buttons
         let key_state = KeyState { left: Note { state: false, active: true }, top: Note { state: false, active: true }, bottom: Note { state: false, active: true }, right: Note { state: false, active: true }};
+        
+        let mut bpm_bars:Vec<BeatLine> = vec![];
 
         Self {
             last_frame: Instant::now(),
@@ -167,7 +170,7 @@ impl GameLogic<'_> {
             key_state,
             song_keys,
             canvas_height: app.height,
-            maked_song: Song { name: "Test".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec!(), bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0) },
+            maked_song: Song { name: "Test".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec!(), bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0), bpm: Some(0) },
             started_song: true,
             started_level: false,
             song,
@@ -188,7 +191,9 @@ impl GameLogic<'_> {
             max_combo: 0,
             actual_button: 0,
             ui_texts,
-            song_sync
+            song_sync,
+            bpm_timer: Instant::now(),
+            bpm_bars
         }
     }
 
@@ -293,8 +298,10 @@ impl GameLogic<'_> {
                         self.combo.text = Some(self.combo_val.to_string() + "x combo");
                         self.combo.render(&mut app.canvas, &texture_creator, _font);
 
-                        match self.song_keys {
-                            Some(_) => Self::handle_notes(self, milliseconds, delta_time, app),
+                        match &self.song_keys {
+                            Some(keys) => {
+                                Self::handle_notes(self, milliseconds, delta_time, app)
+                            },
                             None => {},
                         }
 
@@ -367,8 +374,8 @@ impl GameLogic<'_> {
                         Self::reset(app, app_state)
                     }
                     
-                    if (app.paused || self.end || self.error) {
-                    
+                    if app.paused || self.end || self.error {
+                        // check why i have this
                     }
                 },
                 sdl2::event::Event::KeyDown { keycode: Some(key_value), .. } if key_value == Keycode::from_i32(app.play_keys[1]).unwrap() => {
@@ -469,13 +476,33 @@ impl GameLogic<'_> {
     }
 
     fn handle_notes(&mut self, milliseconds: u128, delta_time: Duration, app: &mut App) {
+        /* 
+        match app.bpm {
+            Some(bpm) => {
+                if (self.bpm_timer.elapsed().as_millis() / 10) > 6000 / bpm as u128 && milliseconds > (300 - (app.coordination_data.base_time - self.song_sync)).try_into().unwrap() {
+                    self.bpm_bars.push(BeatLine::new(app.width, app.height));
+                    self.bpm_timer = Instant::now();
+                }
+            },
+            None => {},
+        }
+
+        for bars in &mut self.bpm_bars {
+            bars.render(app, delta_time);
+            bars.game_object.y += app.coordination_data.key_speed * delta_time.as_secs_f32();
+            bars.rect.y = bars.game_object.y as i32;
+        }
+        */
+
         if let Some(song_keys) = &mut self.song_keys {
-            for key_index in 0..4 {
-                let actual_key = match key_index {
-                    0 => &mut self.key_left,
-                    1 => &mut self.key_up,
-                    2 => &mut self.key_bottom,
-                    _ => &mut self.key_right,
+            for key_index in [4,0,1,2,3] {
+                
+                let mut actual_key = match key_index {
+                    0 => Some(&mut self.key_left),
+                    1 => Some(&mut self.key_up),
+                    2 => Some(&mut self.key_bottom),
+                    3 => Some(&mut self.key_right),
+                    _ => None
                 };
 
                 let mut remove: Vec<usize> = Vec::new(); // Collect indices of notes to remove
@@ -489,27 +516,36 @@ impl GameLogic<'_> {
                         note.render(app);
                         note.update(delta_time, app.coordination_data.key_speed);
 
-                        if (note.game_object.y + 50.0 > (self.canvas_height - 150) as f32) && (note.game_object.y < (self.canvas_height - 80) as f32) && actual_key.pressed && actual_key.timer_hold.elapsed().as_millis() / 10 < 10 {
-                            if note.game_object.active {
-                                if note.holding {
-                                    actual_key.timer_hold = Instant::now();
-                                    self.points += 1;
-                                } else {
-                                    self.combo_val += 1;
-                                    if self.combo_val > self.max_combo {
-                                        self.max_combo = self.combo_val;
+                        match actual_key {
+                            Some(ref mut key_actual) => {
+                                if (note.game_object.y + 50.0 > (self.canvas_height - 150) as f32) && (note.game_object.y < (self.canvas_height - 80) as f32) && key_actual.pressed && key_actual.timer_hold.elapsed().as_millis() / 10 < 10 {
+                                    if note.game_object.active {
+                                        if note.holding {
+
+                                            key_actual.timer_hold = Instant::now();
+                                            self.points += 1;
+                                        } else {
+                                            self.combo_val += 1;
+                                            if self.combo_val > self.max_combo {
+                                                self.max_combo = self.combo_val;
+                                            }
+                                            self.points += 100;
+                                        }
                                     }
-                                    self.points += 100;
+                                    note.game_object.active = false;
+                                    
+                                            key_actual.state = 2;
+                                        
+                                } else if (note.game_object.y > (self.canvas_height - 80) as f32) && !note.muted && note.game_object.active {
+                                    if !note.muted {
+                                        self.combo_val = 0;
+                                    }
+                                    note.muted = true;                          
                                 }
-                            }
-                            note.game_object.active = false;
-                            actual_key.state = 2;
-                        } else if (note.game_object.y > (self.canvas_height - 80) as f32) && !note.muted && note.game_object.active {
-                            if !note.muted {
-                                self.combo_val = 0;
-                            }
-                            note.muted = true;                          
+                            },
+                            None => {},
                         }
+                        
                     }
                 }
                 for value in remove.iter() {
@@ -582,5 +618,28 @@ fn draw_circle(canvas: &mut Canvas<Window>, center_x: i32, center_y: i32, radius
             x += 1;
             y -= 1;
         }
+    }
+}
+
+#[derive(Clone, Copy)]
+struct BeatLine {
+    game_object: GameObject,
+    rect: Rect
+}
+
+impl BeatLine {
+    pub fn new(width: u32, _height: u32) -> Self {
+        let game_object = GameObject { active: true, x: (width / 2 - (((width/2) - 200) / 2)) as f32, y: -100.0 - (5 / 2) as f32, width: (width/2) as f32  - 200.0, height: 5 as f32 };
+        let bar_rect = Rect::new(game_object.x as i32, game_object.y as i32, game_object.width as u32, game_object.height as u32);
+
+        BeatLine {
+            rect: bar_rect,
+            game_object
+        }
+    }
+
+    pub fn render(mut self, app: &mut App, deltatime: Duration) {
+        app.canvas.set_draw_color(Color::RGB(60, 56, 54));
+        app.canvas.fill_rect(self.rect).unwrap();
     }
 }

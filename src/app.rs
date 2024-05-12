@@ -1,30 +1,22 @@
 
 use std::sync::{Arc, Mutex};
-use std::{env, thread};
-use std::fs::File;
-use std::io::{Error, Read};
-use std::thread::current;
+use std::env;
+use std::io::Error;
 use std::time::Instant;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use cpal::{Sample, SampleFormat};
-use rodio::{Decoder, Source};
-use rustfft::num_complex::{self, Complex, Complex32};
+use cpal::SampleFormat;
+use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use rustfft::FftPlanner;
-use sdl2::audio::{AudioCallback, AudioQueue, AudioSpecDesired};
 use sdl2::image::LoadTexture;
-use sdl2::messagebox::MessageBoxFlag;
-use sdl2::mixer::{DEFAULT_CHANNELS, AUDIO_S16LSB, DEFAULT_FORMAT, InitFlag, self, DEFAULT_FREQUENCY, Sdl2MixerContext};
+use sdl2::mixer::{DEFAULT_CHANNELS, AUDIO_S16LSB, InitFlag, self};
 use sdl2::pixels::Color;
-use sdl2::rect::Rect;
-use sdl2::render::{BlendMode, Texture, TextureCreator}; 
-use sdl2::surface::Surface;
+use sdl2::render::{Texture, TextureCreator}; 
 use sdl2::video::WindowContext;
 use sdl2::AudioSubsystem;
-use sdl2::{video::Window, Sdl, render::Canvas, sys::KeyCode, keyboard::Keycode};
+use sdl2::{video::Window, Sdl, render::Canvas, keyboard::Keycode};
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 use crate::game_object::GameObject;
 use crate::gameplay::{game_calibration, play};
@@ -117,7 +109,7 @@ pub struct App {
     pub texture_creator: TextureCreator<WindowContext>,
     pub textures: Textures,
     pub visualizer_settings: Visualizer,
-    pub ctrl_string: String
+    pub ctrl_string: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -195,7 +187,7 @@ impl App {
             texture_creator,
             textures,
             visualizer_settings: Visualizer { bars: true, circle: true },
-            ctrl_string: "".to_owned()
+            ctrl_string: "".to_owned(),
         }
     }
 
@@ -268,7 +260,7 @@ impl App {
             sample_format => panic!("Unsupported sample format '{sample_format}'")
         }.unwrap();
         
-        stream.play();
+        stream.play().unwrap();
 
         // here we will make the rendering of everything
         let mut event_pump = self.context.event_pump().unwrap();
