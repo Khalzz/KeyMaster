@@ -1,7 +1,7 @@
 use std::{fs::{File, OpenOptions}, io::{Read, Write}, sync::MutexGuard, time::{Duration, Instant}};
 use sdl2::{event::Event, keyboard::Keycode, mixer::{self, Music}, pixels::Color, rect::{Point, Rect}, render::Canvas, sys::KeyCode, ttf::Font, video::Window};
 use serde_json::value;
-use crate::{app::{App, AppState, GameState}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::KeyButton}, key::{GameKey, KeyFlag}, load_song::Song};
+use crate::{app::{App, AppState, GameState}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::KeyButton}, key::{GameKey, KeyFlag}, load_song::{Bpm, Song}};
 
 const NUM_BARS: usize = 20;
 
@@ -82,7 +82,7 @@ impl GameLogic<'_> {
                             right_keys: vec![],
                             end: 0,
                             sync: Some(0), 
-                            bpm: Some(0)
+                            bpm: Some(vec![Bpm { bpm: 0, starting_at: 0 }])
                         };
                         match Song::new(folder) {
                             Ok(song) => {
@@ -159,7 +159,7 @@ impl GameLogic<'_> {
             key_state,
             song_keys,
             canvas_height: app.height,
-            maked_song: Song { name: "Test".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec!(), bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0), bpm: Some(0)},
+            maked_song: Song { name: "Test".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec!(), bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0), bpm: Some(vec![Bpm { bpm: 0, starting_at: 0 }])},
             started_song: true,
             started_level: false,
             song,

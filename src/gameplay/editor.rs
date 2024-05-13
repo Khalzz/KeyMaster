@@ -1,6 +1,6 @@
 use std::fs;
 use sdl2::{pixels::Color, ttf::Font, event::Event, keyboard::Keycode};
-use crate::{app::{App, AppState, GameState, Testing}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::{KeyButton, Note}, slider_module::Slider_input}, key::{GameKey, KeyFlag}, load_song::Song};
+use crate::{app::{App, AppState, GameState, Testing}, game_object::GameObject, input::{button_module::{Button, TextAlign}, keybutton::{KeyButton, Note}, slider_module::Slider_input}, key::{GameKey, KeyFlag}, load_song::{Bpm, Song}};
 
 pub struct AddHolding {
     pub can_add: bool,
@@ -46,7 +46,7 @@ impl GameLogic {
             right_keys: vec![],
             end: 0,
             sync: Some(0),
-            bpm: Some(0)
+            bpm: Some(vec![Bpm { bpm: 0, starting_at: 0 }])
         };
 
         let start_index = 0;
@@ -458,11 +458,11 @@ impl GameLogic {
                 
                 
 
-                let edited_song = Song { name: song.name.clone(), id: song.id.clone(), left_keys, up_keys, bottom_keys, right_keys, end: song.end, sync: song.sync, bpm: song.bpm};
+                let edited_song = Song { name: song.name.clone(), id: song.id.clone(), left_keys, up_keys, bottom_keys, right_keys, end: song.end, sync: song.sync, bpm: song.bpm.clone()};
                 return edited_song;
             },
             None => {
-                return Song { name: " ".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec![], bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0), bpm: Some(0) };
+                return Song { name: " ".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec![], bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0), bpm: Some(vec![Bpm { bpm: 0, starting_at: 0 }]) };
             },
         }
     }

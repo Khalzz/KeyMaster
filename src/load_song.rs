@@ -7,6 +7,12 @@ use serde_json;
 use crate::{app::App, game_object::GameObject, input::keybutton::Note, key::{GameKey, KeyFlag}};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct Bpm {
+    pub bpm: u128,
+    pub starting_at: u128
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Song {
     pub(crate) name: String,
     pub(crate) id: Option<i128>,
@@ -16,13 +22,13 @@ pub struct Song {
     pub(crate) right_keys: Vec<Note>,
     pub(crate) end: u128,
     pub(crate) sync: Option<i128>,
-    pub(crate) bpm: Option<u128>,
+    pub(crate) bpm: Option<Vec<Bpm>>,
 }
 
 // this struct loads the data from a json so is runned from the play.rs file
 impl Song {
     pub fn new(folder: &String) -> Result<Song, Box<dyn std::error::Error>> {
-        let mut song: Song = Song { name: "".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec![], bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0), bpm: Some(0) };
+        let mut song: Song = Song { name: "".to_owned(), id: Some(0), left_keys: vec![], up_keys: vec![], bottom_keys: vec![], right_keys: vec![], end: 0, sync: Some(0), bpm: Some(vec![Bpm { bpm: 0, starting_at: 0 }]) };
         match std::fs::read_to_string("songs/".to_owned() + &folder + "/data.json") {
             Ok(file_contents) => {
                 let mut new_song: Song = serde_json::from_str(&file_contents)?;
@@ -116,24 +122,43 @@ impl Song {
     }
 
     
-    pub fn bpm_list(end: u128, self_list:Vec<Note>, x: u32, x2: u32, keys_list: &mut Vec<GameKey>, key_speed: f32, flag: KeyFlag, app: &mut App, edit: bool, bpm: Option<u128>) {
+    pub fn bpm_list(end: u128, self_list:Vec<Note>, x: u32, x2: u32, keys_list: &mut Vec<GameKey>, key_speed: f32, flag: KeyFlag, app: &mut App, edit: bool, bpm: Option<Vec<Bpm>>) {
+        let mut actual_bpm = 0;
         match bpm {
             Some(bpm) => {
-                if bpm > 0 {
+                if bpm.len() > 0 {
+                    
                     let mut value = 300;
 
                     if edit {
                         for (i, _values) in keys_list.clone().iter().enumerate() {
                             if value == i.try_into().unwrap() {
-                                value += 6000 / bpm as u128;
-                                keys_list[i] = GameKey::new(GameObject { active: true, x: (app.width / 2 - (((app.width/2) - 200) / 2)) as f32, y: -125.0, width: (app.width/2) as f32  - 200.0, height: 6 as f32 }, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, i as i128, Some(flag.clone()), None, false);
+                                if bpm[actual_bpm].starting_at < i.try_into().unwrap() {
+                                    keys_list[i] = GameKey::new(GameObject { active: true, x: (app.width / 2 - (((app.width/2) - 200) / 2)) as f32, y: -125.0, width: (app.width/2) as f32  - 200.0, height: 6 as f32 }, Color::RGBA(0, 0, 0,0), app.coordination_data.key_speed, i as i128, Some(flag.clone()), None, false);
+                                    value += 6000 / bpm[actual_bpm].bpm as u128;
+                                
+                                    if actual_bpm < bpm.len() - 1 {
+                                        if (i > bpm[actual_bpm + 1].starting_at.try_into().unwrap()) {
+                                            println!("yes ser");
+                                            actual_bpm += 1;
+                                        }
+                                    }
+                                }
                             }
                         }
                     } else {
                         for moment in 0..end {
                             if moment == value {
-                                keys_list.push(GameKey::new(GameObject { active: true, x: (app.width / 2 - (((app.width/2) - 500) / 2)) as f32, y: -100.0, width: (app.width/2) as f32  - 500.0, height: 6 as f32 }, Color::RGB(60, 56, 54), app.coordination_data.key_speed, moment as i128, Some(flag.clone()), None, false));
-                                value += 6000 / bpm as u128;
+                                if bpm[actual_bpm].starting_at < moment.try_into().unwrap() {
+                                    keys_list.push(GameKey::new(GameObject { active: true, x: (app.width / 2 - (((app.width/2) - 500) / 2)) as f32, y: -100.0, width: (app.width/2) as f32  - 500.0, height: 6 as f32 }, Color::RGB(60, 56, 54), app.coordination_data.key_speed, moment as i128, Some(flag.clone()), None, false));
+                                    value += 6000 / bpm[actual_bpm].bpm as u128;
+                                    if actual_bpm < bpm.len() - 1 {
+                                        if (moment > bpm[actual_bpm + 1].starting_at.try_into().unwrap()) {
+                                            println!("yes ser");
+                                            actual_bpm += 1;
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
