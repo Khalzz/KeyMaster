@@ -56,6 +56,7 @@ pub struct GameLogic<'a> { // here we define the data we use on our script
 impl GameLogic<'_> {
     // this is called once
     pub fn new(app: &mut App,  app_state: &mut AppState) -> Self {
+        let benchmark = Instant::now();
         let mut song = None;
         let mut song_keys = None;
         let mut song_sync = 0;
@@ -159,6 +160,8 @@ impl GameLogic<'_> {
         let key_state = KeyState { left: Note { state: false, active: true }, top: Note { state: false, active: true }, bottom: Note { state: false, active: true }, right: Note { state: false, active: true }};
         
         let mut bpm_bars:Vec<BeatLine> = vec![];
+
+        println!("{}", benchmark.elapsed().as_millis());
 
         Self {
             last_frame: Instant::now(),
@@ -289,6 +292,40 @@ impl GameLogic<'_> {
                                 milliseconds = (elapsed_time.as_millis() / 10) - (if app.paused_time > 0 { app.paused_time } else { 1 }) / 10
                             },
                         }
+                        
+                        // audio loading and playing
+                        if milliseconds >= 300 && self.started_song == true {
+                            match app_state.state {
+                                GameState::Playing => {
+                                    self.started_song = false;
+                                    match &self.song {
+                                        Some(song) => {
+                                            match song.play(1) {
+                                                Ok(_) => {
+                                                },
+                                                Err(_) => {}
+                                            }
+                                            match &app.testing_song {
+                                                Some(testing) => {
+                                                    match mixer::Music::set_pos(((elapsed_time.as_millis() / 10) - app.paused_time / 10) as f64 + (testing.start_point) as f64 / 100.0) {
+                                                        Ok(_) => {},
+                                                        Err(_) => {
+                                                            app.alert_message = String::from("the song position wasn't loaded correctly");
+                                                            self.actual_button = 0;
+                                                            app.paused = true;
+                                                            self.error = true;
+                                                        },
+                                                    };
+                                                },
+                                                None => {},
+                                            }
+                                        },
+                                        None => {},
+                                    }
+                                },   
+                                _ => {}
+                            }
+                        }
 
                         let mut key_buttons = [&self.key_left, &self.key_up, &self.key_right, &self.key_bottom];
                         for (i, button_key) in key_buttons.iter_mut().enumerate() {
@@ -315,36 +352,6 @@ impl GameLogic<'_> {
                         if !self.started_level {
                             self.started_level = true;
                             self.start_time = Instant::now();
-                        }
-                        
-                        // audio loading and playing
-                        if milliseconds >= 300 && self.started_song == true {
-                            match app_state.state {
-                                GameState::Playing => {
-                                    self.started_song = false;
-                                    match &self.song {
-                                        Some(song) => {
-                                            song.play(1).expect("The song didn't played");
-                                            match &app.testing_song {
-                                                Some(testing) => {
-                                                    match mixer::Music::set_pos(((elapsed_time.as_millis() / 10) - app.paused_time / 10) as f64 + (testing.start_point) as f64 / 100.0) {
-                                                        Ok(_) => {},
-                                                        Err(_) => {
-                                                            app.alert_message = String::from("the song position wasn't loaded correctly");
-                                                            self.actual_button = 0;
-                                                            app.paused = true;
-                                                            self.error = true;
-                                                        },
-                                                    };
-                                                },
-                                                None => {},
-                                            }
-                                        },
-                                        None => {},
-                                    }
-                                },   
-                                _ => {}
-                            }
                         }
                         
                         if milliseconds > self.song_end {

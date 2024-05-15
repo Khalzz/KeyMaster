@@ -223,7 +223,7 @@ impl App {
 
         let stream = match sample_format {
             SampleFormat::F32 => device.build_input_stream(&config, move |data: &[f32], _: &cpal::InputCallbackInfo| {
-            if last_update.elapsed().as_millis() > 10 && (self.visualizer_settings.circle ||  self.visualizer_settings.bars) {
+            if last_update.elapsed().as_millis() > 5 && (self.visualizer_settings.circle ||  self.visualizer_settings.bars) {
                 let mut locked_value = data_inside_closure.lock().unwrap();
                 let mut planner: FftPlanner<f32> = FftPlanner::new();
                 let fft = planner.plan_fft_forward(data.len());

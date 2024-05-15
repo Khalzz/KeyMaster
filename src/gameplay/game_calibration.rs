@@ -242,10 +242,10 @@ impl GameLogic<'_> {
         for event in event_pump.poll_iter() {
             match event {
                 sdl2::event::Event::KeyDown { keycode: Some(key_value), .. } if key_value == Keycode::from_i32(app.play_keys[1]).unwrap() => {
-                    self.song_sync -= 5;
+                    self.song_sync -= 1;
                 },
                 sdl2::event::Event::KeyDown { keycode: Some(key_value), .. } if key_value == Keycode::from_i32(app.play_keys[2]).unwrap() => {
-                    self.song_sync += 5;
+                    self.song_sync += 1;
                 },
                 sdl2::event::Event::KeyDown { keycode: Some(Keycode::Space), .. } => {
                     self.song_sync = 0;

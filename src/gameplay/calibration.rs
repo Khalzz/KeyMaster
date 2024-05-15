@@ -21,7 +21,7 @@ impl GameLogic {
 
         // UI ELEMENT
         let timer = Button::new(GameObject {active: true, x:(app.width - 40) as f32, y: 10.0, width: 0.0, height: 0.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None,TextAlign::Center);
-        let enter_timer = Button::new(GameObject {active: true, x:0 as f32, y: app.height as f32 - 160.0, width: app.width as f32, height: 10.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
+        let enter_timer = Button::new(GameObject {active: true, x:0 as f32, y: app.height as f32 - 160.0, width: app.width as f32, height: 0.0},Some(String::from("Timer")),Color::RGB(100, 100, 100),Color::WHITE,Color::RGB(0, 200, 0),Color::RGB(0, 0, 0),None, TextAlign::Center);
         let out_timer = Button::new(GameObject { active: true, x:0 as f32, y: app.height as f32 - 90.0, width: app.width as f32, height: 0.0}, Some(String::from("Timer")), Color::RGB(100, 100, 100),Color::WHITE, Color::RGB(0, 200, 0), Color::RGB(0, 0, 0), None, TextAlign::Center);
         // controlers 
         let key_up = KeyButton::new(app, GameObject {active: true, x: ((app.width/2) - 95) as f32, y: app.height as f32 - 170.0, width: 90.0, height: 90.0}, Color::RGB(200, 50, 100));
@@ -81,7 +81,7 @@ impl GameLogic {
             note.render(app);
             note.update(delta_time, app.coordination_data.key_speed);         
 
-            if (note.game_object.y > (height - 150) as f32) && (note.game_object.y < (height - 80) as f32) {
+            if (note.game_object.y > (height - 160) as f32) && (note.game_object.y < (height - 90) as f32) {
                 inside = true;
             } else {
                 inside = false;
