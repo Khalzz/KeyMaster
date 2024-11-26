@@ -1,6 +1,6 @@
 # Arrownier
 
-[![YouTube](http://i.ytimg.com/vi/Q8-ZSLINa58/hqdefault.jpg)](https://www.youtube.com/watch?v=Q8-ZSLINa58)
+https://github.com/user-attachments/assets/62281e6b-c52a-4fc5-a6fe-8dc8cde80f46
 
 Arrowner is a “4 key rhythm game” made from scratch using SDL2, the main focus of the game is letting the player create, share and play songs.
 
